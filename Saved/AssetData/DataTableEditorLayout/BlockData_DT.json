@@ -1,0 +1,16 @@
+{
+	"ColumnWidths":
+	{
+		"name": 393,
+		"DisplayName": 132,
+		"TextureIndex": 120,
+		"MeshType": 146,
+		"TextureIndexFORWARD": 158,
+		"TextureIndexBACKWARD": 160,
+		"TextureIndexRIGHT": 146,
+		"TextureIndexLEFT": 148,
+		"TextureIndexDOWN": 147,
+		"TextureIndexUP": 141,
+		"bHasSingleTexture": 144
+	}
+}
