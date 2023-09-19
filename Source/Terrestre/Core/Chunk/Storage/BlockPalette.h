@@ -48,7 +48,7 @@ public:
 	// * Decodes all data into an array
 	void BulkUnpack(TArray<FBlockState, TInlineAllocator<AChunk::Volume>>& outputDestination);
 
-	FORCEINLINE
+	
 	bool IsEmpty() const;
 	
 

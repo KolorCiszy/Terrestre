@@ -7,7 +7,7 @@
 #include "PlayerCharacter.generated.h"
 
 #pragma warning(disable : 4263)  /* warning from Crouch and UnCrouch function not being virtual, 
-								 /*	because if marked virtual, it didn't want to bound using enhanced input */
+								 /*	because if marked virtual, it didn't want to bind using enhanced input */
 #pragma warning(disable : 4264)  /* consequence of previous warning - Crouch and UnCrouch 
 								 /*	does not override any base class function */
 

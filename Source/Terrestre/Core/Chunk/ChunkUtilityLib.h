@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Chunk.h"
-#include "Storage//ChunkRegion.h"
+#include "Storage/ChunkRegion.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "ChunkUtilityLib.generated.h"
 
@@ -42,10 +42,27 @@ class TERRESTRE_API UChunkUtilityLib : public UBlueprintFunctionLibrary
 	friend class AChunkManager;
 public:
 	UFUNCTION(BlueprintPure, Category = "Chunk Manager")
-	static AChunkManager* GetChunkManager();
-
+	static AChunkManager* GetChunkManager()
+	{
+		return ChunkManager;
+	}
 	UFUNCTION(BlueprintPure, Category = "Chunk Utilities")
-	static FVector WorldLocationToChunkLocation(FVector inWorldLocation);
+	static FVector WorldLocationToChunkLocation(FVector inWorldLocation)
+	{
+		FVector result{};
+		result.X = FMath::TruncToInt32(inWorldLocation.X) / FMath::TruncToInt32(AChunk::SizeScaled.X);
+		result.Y = FMath::TruncToInt32(inWorldLocation.Y) / FMath::TruncToInt32(AChunk::SizeScaled.Y);
+		result.Z = FMath::TruncToInt32(inWorldLocation.Z) / FMath::TruncToInt32(AChunk::SizeScaled.Z);
+		if (inWorldLocation.X < 0)
+			result.X--;
+		if (inWorldLocation.Y < 0)
+			result.Y--;
+		if (inWorldLocation.Z < 0)
+			result.Z--;
+		result *= AChunk::SizeScaled;
+		return result;
+	}
+	
 	UFUNCTION(BlueprintPure, Category = "Chunk Utilities")
 	static FIntVector WorldLocationToLocalBlockPos(FVector inWorldLocation)
 	{

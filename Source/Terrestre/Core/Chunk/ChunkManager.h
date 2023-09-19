@@ -21,6 +21,7 @@ class FGenerateChunkRegionDataTask;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FUpdateChunksMeshDelegate);
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FApplyChunksMeshDelegate);
 
 UCLASS()
 class TERRESTRE_API AChunkManager : public AActor
@@ -82,6 +83,9 @@ public:
 
 	UPROPERTY(BlueprintAssignable)
 	FUpdateChunksMeshDelegate OnRebuildChunkMeshes;
+
+	UPROPERTY(BlueprintAssignable)
+	FApplyChunksMeshDelegate OnApplyChunkMeshes;
 
 	UPROPERTY(EditDefaultsOnly)
 	FFastNoiseSettings terrainShaperDensityNoise;

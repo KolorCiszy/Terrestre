@@ -14,11 +14,11 @@ class ATerrestrePlayerState : public APlayerState
 public:
 	void ReadLoadedPlayerData(TSharedPtr<FPlayerData> data);
 
-	inline FVector GetSpawnLocation() const;
+	FVector GetSpawnLocation() const;
 
-	inline void SetSpawnLocation(FVector location);
+	void SetSpawnLocation(FVector location);
 
-	inline FTransform GetSpawnTransform() const;
+	FTransform GetSpawnTransform() const;
 private:
 
 	FTransform SpawnTransform;

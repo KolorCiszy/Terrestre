@@ -28,7 +28,7 @@ public:
 	/* Generates Terrain Shape for given chunk location, outputing a temp heightmap for further generator use */
 	static void GenerateTerrainShape(TArray<FBlockState, TInlineAllocator<AChunk::Volume>>& chunkBlocks, FVector chunkLocation, bool& bDensitySignChange, TArray<int16>& heightMap);
 	
-	void inline Initialize();
+	void Initialize();
 
 	UFUNCTION(BlueprintPure, Category = "Terrain Shaper")
 	static inline float GetContinentalnessAtXY_BP(double X, double Y);
@@ -44,7 +44,7 @@ public:
 	float GetDensityAtXYZ_Native(double worldXPos, double worldYPos, double worldZPos);
 	FORCEINLINE
 	float GetContinentalnessAtXY_Native(double X, double Y);
-	FORCEINLINE
+	
 	int32 GetTerrainHeightAtXY_Native(double X, double Y);
 	UPROPERTY()
 	UFastNoiseWrapper* DensityNoise;

@@ -5,12 +5,9 @@
 #include "Chunk.h"
 #include "ChunkUtilityLib.h"
 #include "ChunkManager.h"
-#include "Components/BoxComponent.h"
 #include "Misc/Directions.h"
-#include "Kismet/KismetMathLibrary.h"
 #include "ProceduralMeshComponent.h"
 #include "Terrestre/Core/Player/PlayerCharacter.h"
-#include "RealtimeMeshComponent.h"
 #include "RealtimeMeshSimple.h"
 #include "Terrestre/Core/Block/BlockData.h"
 #include "Async/GenerateChunkMeshTask.h"
@@ -50,7 +47,7 @@ void AChunk::BeginPlay()
 #ifdef USE_PROCEDURAL_MESH
 	ProceduralMesh->SetMaterial(0, primaryMaterial);
 #endif
-	meshingTask = new FAsyncTask<FGenerateChunkMeshTask>(this);
+	meshingTask = MakeUnique<FAsyncTask<FGenerateChunkMeshTask>>(this);
 	MarkMeshDirty();
 }
 
@@ -70,10 +67,11 @@ void AChunk::CreateMeshAsync()
 {
 	if(meshingTask && bMeshDirty && meshingTask->IsDone())
 	{
-		meshingTask->StartBackgroundTask(UChunkUtilityLib::GetChunkManager()->ChunkMeshingTP, EQueuedWorkPriority::Highest, EQueuedWorkFlags::None);
+		
+		meshingTask->StartBackgroundTask(UChunkUtilityLib::GetChunkManager()->ChunkMeshingTP, EQueuedWorkPriority::Highest, EQueuedWorkFlags::DoNotRunInsideBusyWait);
 		bMeshingTaskDone = false;
 		bMeshReady = false;
-		UChunkUtilityLib::GetChunkManager()->OnRebuildChunkMeshes.RemoveDynamic(this, &AChunk::CreateMeshAsync);
+		UChunkUtilityLib::GetChunkManager()->OnRebuildChunkMeshes.AddUniqueDynamic(this, &AChunk::CreateMeshAsync);
 		UChunkUtilityLib::GetChunkManager()->ActiveMeshingTasksCount++;
 	}
 
@@ -87,11 +85,14 @@ void AChunk::ClearMeshSection(int32 sectionNum)
 void AChunk::MarkMeshReady()
 {
 	UChunkUtilityLib::GetChunkManager()->ActiveMeshingTasksCount--;
-	bMeshReady = true;
-	UChunkUtilityLib::GetChunkManager()->ApplyChunkMeshQueue.Enqueue(this);
-	
+	AsyncTask(ENamedThreads::GameThread, [&]() 
+		{
+			
+			bMeshReady = true;
+			UChunkUtilityLib::GetChunkManager()->OnApplyChunkMeshes.AddUniqueDynamic(this, &AChunk::ApplyMesh);
+		});
 }
-bool AChunk::ApplyMesh()
+void AChunk::ApplyMesh()
 {
 	if (meshingTask->IsDone()) 
 	{
@@ -112,9 +113,10 @@ bool AChunk::ApplyMesh()
 		}
 		meshingTask->GetTask().ResetData();
 		bMeshDirty = false;
-		return true;
+		UChunkUtilityLib::GetChunkManager()->OnApplyChunkMeshes.RemoveDynamic(this, &AChunk::ApplyMesh);
+		//return true;
 	}
-	return false;
+	//return false;
 	
 #ifdef USE_PROCEDURAL_MESH
 	/*
@@ -304,14 +306,6 @@ void AChunk::MarkPendingDestroy()
 void AChunk::EndPlay(EEndPlayReason::Type reason)
 {
 	MarkPendingDestroy();
-	if (reason != EEndPlayReason::Quit)
-	{
-		
-	}
-	if (bReadyToDestroy) 
-	{
-		delete meshingTask;
-	}
 }
 bool AChunk::IsInsideBounds(FVector inWorldLocation)
 {

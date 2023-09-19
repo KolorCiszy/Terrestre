@@ -495,7 +495,7 @@ void FGenerateChunkMeshTask::CreateQuad(FVector tlv, FVector trv, FVector blv, F
 		meshData->UV0.Append({
 		FVector2D{blv.X, blv.Y}, FVector2D{brv.X, brv.Y}, FVector2D{tlv.X, tlv.Y}, FVector2D{trv.X, trv.Y}
 			});
-		if(norm.Z)
+		if(FMath::TruncToInt32(norm.Z) == 1)
 		{
 			quadDirection = EDirections::Up;
 		}
@@ -510,7 +510,7 @@ void FGenerateChunkMeshTask::CreateQuad(FVector tlv, FVector trv, FVector blv, F
 		meshData->UV0.Append({
 		FVector2D{blv.Y, blv.Z}, FVector2D{brv.Y, brv.Z}, FVector2D{tlv.Y, tlv.Z}, FVector2D{trv.Y, trv.Z}
 			});
-		if (norm.X)
+		if (FMath::TruncToInt32(norm.X) == 1)
 		{
 			quadDirection = EDirections::Forward;
 		}
@@ -524,7 +524,7 @@ void FGenerateChunkMeshTask::CreateQuad(FVector tlv, FVector trv, FVector blv, F
 		meshData->UV0.Append({
 		FVector2D{blv.X, blv.Z}, FVector2D{brv.X, brv.Z}, FVector2D{tlv.X, tlv.Z}, FVector2D{trv.X, trv.Z}
 			});
-		if (norm.Y)
+		if (FMath::TruncToInt32(norm.Y) == 1)
 		{
 			quadDirection = EDirections::Right;
 		}

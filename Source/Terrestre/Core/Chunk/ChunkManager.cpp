@@ -5,12 +5,9 @@
 #include "Chunk.h"
 #include "ChunkUtilityLib.h"
 #include "Kismet/GameplayStatics.h"
-#include "Logging/StructuredLog.h"
 #include "Terrestre/Core/Block/BlockData.h"
 #include "Terrestre/Core/Player/PlayerCharacter.h"
-#include "Terrestre/Core/Subsystems/GameSavingSubsystem.h"
 #include "Terrestre/Core/Gamemode/TerrestrePlayerState.h"
-#include "Terrestre/Core/Player/PlayerData.h"
 #include "Terrestre/Core/Gamemode/TerrestreGameModeBase.h"
 #include "Terrestre/Core/Data Generators/TerrainShaper.h"
 #include "Terrestre/Core/Data Generators/TerrainSurfaceDecorator.h"
@@ -144,6 +141,7 @@ void AChunkManager::BeginPlay()
 	{
 		FPlatformProcess::Sleep(0.5f);
 	}
+	/*
 	TObjectPtr<AChunk> ApplyMeshChunk;
 	while(ApplyChunkMeshQueue.Peek(ApplyMeshChunk))
 	{
@@ -152,7 +150,8 @@ void AChunkManager::BeginPlay()
 			ApplyChunkMeshQueue.Dequeue(ApplyMeshChunk);
 		}
 	}
-
+	*/
+	OnApplyChunkMeshes.Broadcast();
 	
 	auto gameMode = Cast<ATerrestreGameModeBase>(UGameplayStatics::GetGameMode(this));
 	gameMode->SpawnPlayerCharacter(UGameplayStatics::GetPlayerState(this, 0));
@@ -281,7 +280,7 @@ void AChunkManager::RecalculateActiveRegions()
 	}
 	for(auto& regionID : ActiveRegionsIDs)
 	{
-		if (!ActiveRegionsMap.Contains(regionID)) 
+		if (!ActiveRegionsMap.Contains(regionID) && !RegionsCurrentlyGenerating.Contains(regionID))
 		{
 			RegionsToLoad.Add(regionID);
 		}
@@ -345,17 +344,7 @@ void AChunkManager::Tick(float DeltaTime)
 
 	/* Start measuring tick time to know when to skip a tick if it takes too long to process */
 	tickStart = std::chrono::high_resolution_clock::now();
-
-
-	TObjectPtr<AChunk> ApplyMeshChunk{};
-	while (ApplyChunkMeshQueue.Peek(ApplyMeshChunk))
-	{
-		if (ApplyMeshChunk->ApplyMesh())
-		{
-			ApplyChunkMeshQueue.Dequeue(ApplyMeshChunk);
-		}
-
-	}
+	OnApplyChunkMeshes.Broadcast();
 
 	OnRebuildChunkMeshes.Broadcast();
 
@@ -369,11 +358,15 @@ void AChunkManager::Tick(float DeltaTime)
 	
 	if (auto regionToGenerate = RegionsToLoad.CreateIterator())
 	{
+		AsyncGenerateRegionData(*regionToGenerate);
+		RegionsToLoad.Remove(*regionToGenerate);
+		/*
 		if (!RegionsCurrentlyGenerating.Contains(*regionToGenerate))
 		{
 			AsyncGenerateRegionData(*regionToGenerate);
 			RegionsToLoad.Remove(*regionToGenerate);
 		}
+		*/
 	}	
 	
 
@@ -383,11 +376,25 @@ void AChunkManager::Tick(float DeltaTime)
 	{
 		GetRegionDataAndDeleteTask(getThisRegion);
 	}
-	
+	TSet<FIntVector> removedRegions;
+	for (auto& regionID : RegionsToUnload)
+	{
+		if (FChunkRegion* region = ActiveRegionsMap.Find(regionID))
+		{
+			if (region->RefCount == 0)
+			{
+				FScopeLock lock(&mutex);
+				ActiveRegionsMap.Remove(regionID);
+				removedRegions.Add(regionID);
+			}
+		}
+	}
+	RegionsToUnload = RegionsToUnload.Difference(removedRegions);
+
+
+
 	for (auto& oldLocation : LocationsToDespawn)
 	{
-		
-		
 		const FVector& newLocation = *LocationsToSpawn.CreateConstIterator();
 		FIntVector newRegionID = UChunkUtilityLib::GetRegionID(newLocation);
 		FIntVector oldRegionID = UChunkUtilityLib::GetRegionID(oldLocation);
@@ -397,7 +404,7 @@ void AChunkManager::Tick(float DeltaTime)
   		
 		TObjectPtr<AChunk> chunk;
 		chunk = SpawnedChunksMap[oldLocation];
-		if (newRegion)
+		if (newRegion && chunk->bMeshingTaskDone)
 		{
 			chunk->ClearMeshSection(0);
 			chunk->SetActorLocation(newLocation);
@@ -426,20 +433,6 @@ void AChunkManager::Tick(float DeltaTime)
 	
 	}
 	
-	TSet<FIntVector> removedRegions;
-	for (auto& regionID : RegionsToUnload)
-	{
-		if (FChunkRegion* region = ActiveRegionsMap.Find(regionID))
-		{
-			if(region->RefCount == 0)
-			{
-				FScopeLock lock(&mutex);
-				ActiveRegionsMap.Remove(regionID);
-				removedRegions.Add(regionID);
-			}
-		}
-	}
-	RegionsToUnload = RegionsToUnload.Difference(removedRegions);
 	
 }
 TObjectPtr<AChunk> AChunkManager::SpawnChunkAtLocation(const FVector inLocation)

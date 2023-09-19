@@ -3,6 +3,7 @@
 
 #include "Terrestre/Core/Gamemode/TerrestreGameInstance.h"
 #include "Terrestre/Core/Chunk/ChunkManager.h"
+#include "Terrestre/Core/Chunk/ChunkUtilityLib.h"
 
 
 

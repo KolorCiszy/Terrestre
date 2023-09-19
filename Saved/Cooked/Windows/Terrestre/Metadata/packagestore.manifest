@@ -1445,6 +1445,10 @@
 			"ChunkId": "373e292adf7f7fdb00000001"
 		},
 		{
+			"Path": "Terrestre/Content/Core/World/Materials/Terrain/FarTerrain_M.uasset",
+			"ChunkId": "cb852c9b2efcb08000000001"
+		},
+		{
 			"Path": "Terrestre/Content/Core/World/Materials/Terrain/Terrain_M.uasset",
 			"ChunkId": "0635dd77e461a24700000001"
 		},
@@ -3207,6 +3211,12 @@
 			"Name": "/Game/Core/World/Chunk/RealtimeMeshSimple",
 			"ExportBundleChunkIds": [
 				"373e292adf7f7fdb00000001"
+			]
+		},
+		{
+			"Name": "/Game/Core/World/Materials/Terrain/FarTerrain_M",
+			"ExportBundleChunkIds": [
+				"cb852c9b2efcb08000000001"
 			]
 		},
 		{

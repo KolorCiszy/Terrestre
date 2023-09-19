@@ -1,6 +1,6 @@
 #include "TerrainSurfaceDecorator.h"
 #include "Terrestre/Core/Chunk/ChunkUtilityLib.h"
-#include "Terrestre/Core/Data Generators/TerrainShaper.h"
+
 
 
 void UTerrainSurfaceDecorator::GenerateTerrainSurfaceDecorations(TArray<FBlockState, TInlineAllocator<AChunk::Volume>>& chunkBlocks, FVector chunkLocation, bool bDensitySignChange, TArray<int16>& heightMap)

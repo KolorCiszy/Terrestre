@@ -2,11 +2,10 @@
 
 
 #include "TerrestreGameModeBase.h"
-#include "Terrestre/Core/Player/PlayerCharacter.h"
 #include "Terrestre/Core/Gamemode/TerrestrePlayerState.h"
-#include "Terrestre/Core/Chunk/ChunkUtilityLib.h"
+#include "Terrestre/Core/Player/PlayerCharacter.h"
 #include "Terrestre/Core/Subsystems/GameSavingSubsystem.h"
-#include "Terrestre/Core/Chunk/ChunkManager.h"
+
 ATerrestreGameModeBase::ATerrestreGameModeBase()
 {
 	DefaultPlayerName = FText::FromString(L"Jorge");

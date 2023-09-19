@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
-#include "Terrestre/Core/Chunk/ChunkUtilityLib.h"
+
 #include "TerrestreGameInstance.generated.h"
 
 

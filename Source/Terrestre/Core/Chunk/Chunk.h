@@ -4,10 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-//#include "Storage/BlockPalette.h"
 #include "Terrestre/Core/Interfaces/InteractableActor.h"
 #include "RealtimeMeshSimple.h"
-#include "RealtimeMeshActor.h"
 #include "Chunk.generated.h"
 
 
@@ -53,7 +51,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Chunk")
 	FBlockState GetBlockAtLocalPosition(const FIntVector localPos) const;
 	UFUNCTION(BlueprintCallable, Category = "Chunk")
-	inline bool IsEmpty() const;
+	FORCEINLINE bool IsEmpty() const;
 	UFUNCTION(BlueprintCallable, Category = "Chunk")
 	bool ModifyBlockAtLocalPosition(const FIntVector localPos, const FBlockState& newBlock, bool bRequestMeshUpdate = true);
 	
@@ -61,7 +59,7 @@ public:
 	UFUNCTION(BlueprintPure, CAtegory = "Chunk")
 	bool IsInsideBounds(FVector inWorldLocation);
 
-	bool inline MarkMeshDirty();
+	bool MarkMeshDirty();
 
 protected:
 	// Called when the game starts or when spawned
@@ -104,11 +102,11 @@ private:
 	UFUNCTION()
 	void CreateMeshAsync();
 
-	void inline MarkMeshReady();
+	void MarkMeshReady();
 
-	void inline CancelMeshingTask();
+	void CancelMeshingTask();
 
-	FAsyncTask<FGenerateChunkMeshTask>* meshingTask;
+	TUniquePtr<FAsyncTask<FGenerateChunkMeshTask>> meshingTask;
 
 
 	//FRealtimeMeshSectionKey meshSectionKey;
@@ -126,8 +124,9 @@ private:
 	UPROPERTY(EditAnywhere)
 	UMaterialInterface* primaryMaterial;
 
-	// * Always executes on the game thread
-	bool ApplyMesh();
-
-	void inline ClearMeshSection(int32 sectionNum);
+	
+	UFUNCTION()		// * Always executes on the game thread
+	void ApplyMesh();
+	FORCEINLINE
+	void ClearMeshSection(int32 sectionNum);
 };
