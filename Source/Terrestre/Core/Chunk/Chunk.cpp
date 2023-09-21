@@ -97,9 +97,12 @@ void AChunk::ClearMeshSection(int32 sectionNum)
 #ifdef USE_PROCEDURAL_MESH
 	ProceduralMesh->ClearMeshSection(sectionNum);
 #else
-	realtimeMesh->RemoveSection(meshSectionKey);
+	if (bMeshCreated)
+	{
+		realtimeMesh->SetSectionVisibility(meshSectionKey, false);
+		//bMeshCreated = false;
+	}
 #endif
-	bMeshCreated = false;
 }
 void AChunk::MarkMeshReady()
 {
@@ -109,17 +112,19 @@ void AChunk::MarkMeshReady()
 			
 			bMeshReady = true;
 			UChunkUtilityLib::GetChunkManager()->OnApplyChunkMeshes.AddUniqueDynamic(this, &AChunk::ApplyMesh);
+			UChunkUtilityLib::GetChunkManager()->OnRebuildChunkMeshes.RemoveDynamic(this, &AChunk::CreateMeshAsync);
 		});
 }
 void AChunk::ApplyMesh()
 {
-	if (meshingTask->IsDone()) 
+	if (meshingTask->IsDone())
 	{
 		bMeshingTaskDone = true;
 		FMeshData& meshData = *meshingTask->GetTask().meshData;
+
+#ifdef USE_PROCEDURAL_MESH
 		if (meshData.Positions.Num() > 3)
 		{
-#ifdef USE_PROCEDURAL_MESH
 			ProceduralMesh->CreateMeshSection(0,
 				meshData.Positions,
 				meshData.Triangles,
@@ -128,30 +133,37 @@ void AChunk::ApplyMesh()
 				meshData.Colors,
 				TArray<FProcMeshTangent>{}, true);
 			bMeshCreated.store(true);
+		}
 #else
-		
-			if (!meshSectionKey.IsValid())
+		if (meshData.Positions.Num() > 3) 
+		{
+			if (!bMeshCreated)
 			{
 				FRealtimeMeshSectionConfig config{ ERealtimeMeshSectionDrawType::Dynamic, 0 };
 				meshSectionKey = realtimeMesh->CreateMeshSection(0, config, meshData, true);
+				bMeshCreated = true;
 			}
 			else
 			{
 				realtimeMesh->UpdateSectionMesh(meshSectionKey, meshData);
+				if (!realtimeMesh->IsSectionVisible(meshSectionKey))
+				{
+					realtimeMesh->SetSectionVisibility(meshSectionKey, true);
+				}
 			}
-			
+		}
+		else
+		{
+			ClearMeshSection(0);
+		}
 
 #endif
-
-			
-		}
 		meshingTask->GetTask().ResetData();
 		bMeshDirty = false;
 		UChunkUtilityLib::GetChunkManager()->OnApplyChunkMeshes.RemoveDynamic(this, &AChunk::ApplyMesh);
-		//return true;
+			
 	}
-	//return false;
-
+	
 }
 
 bool AChunk::MarkMeshDirty()

@@ -52,7 +52,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Chunk")
 	FBlockState GetBlockAtLocalPosition(const FIntVector localPos) const;
 	UFUNCTION(BlueprintCallable, Category = "Chunk")
-	FORCEINLINE bool IsEmpty() const;
+	bool IsEmpty() const;
 	UFUNCTION(BlueprintCallable, Category = "Chunk")
 	bool ModifyBlockAtLocalPosition(const FIntVector localPos, const FBlockState& newBlock, bool bRequestMeshUpdate = true);
 	
