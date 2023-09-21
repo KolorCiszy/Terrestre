@@ -9,12 +9,13 @@
 #include "Chunk.generated.h"
 
 
-#define USE_PROCEDURAL_MESH
+//#define USE_PROCEDURAL_MESH
 
 struct FRealtimeMeshSimpleMeshData;
 using FMeshData = FRealtimeMeshSimpleMeshData;
 class UBoxComponent;
 class UProceduralMeshComponent;
+class URealtimeMeshComponent;
 class URealtimeMeshSimple;
 class FGenerateChunkMeshTask;
 class FBlockPalette;
@@ -60,8 +61,11 @@ public:
 	bool IsInsideBounds(FVector inWorldLocation);
 
 	bool MarkMeshDirty();
-
+	
 protected:
+	
+	
+
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
@@ -109,14 +113,21 @@ private:
 	TUniquePtr<FAsyncTask<FGenerateChunkMeshTask>> meshingTask;
 
 
-	//FRealtimeMeshSectionKey meshSectionKey;
+	
+
 
 	UPROPERTY(Category = "Procedural Mesh", VisibleAnywhere, BlueprintReadOnly, meta = (ExposeFunctionCategories = "Mesh,Rendering,Physics,Components|StaticMesh", AllowPrivateAccess = "true"))
 	TObjectPtr<UProceduralMeshComponent> ProceduralMesh;
-	/*
-	UPROPERTY(Category = "Bounds Box", VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UBoxComponent> BoundsBox;
-	*/
+
+	UPROPERTY()
+	TObjectPtr<URealtimeMeshComponent> RealtimeMeshComponent;
+
+	FRealtimeMeshSectionKey meshSectionKey;
+	
+
+	UPROPERTY()
+	URealtimeMeshSimple* realtimeMesh;
+
 	bool SweepTestForVisibility(TArray<FHitResult>& sweepResult, FVector startLocation);
 
 	AChunk* GetNeighbourChunk(EDirections direction);

@@ -8,9 +8,9 @@
 #include "Misc/Directions.h"
 #include "ProceduralMeshComponent.h"
 #include "Terrestre/Core/Player/PlayerCharacter.h"
-#include "RealtimeMeshSimple.h"
 #include "Terrestre/Core/Block/BlockData.h"
 #include "Async/GenerateChunkMeshTask.h"
+#include "RealtimeMeshComponent.h"
 
 
 
@@ -35,17 +35,32 @@ AChunk::AChunk()
 	ProceduralMesh = CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("ProceduralMesh"));
 	SetRootComponent(ProceduralMesh);
 	ProceduralMesh->SetCollisionProfileName(UCollisionProfile::BlockAll_ProfileName);
+#else
+
+	RealtimeMeshComponent = CreateDefaultSubobject<URealtimeMeshComponent>(TEXT("RealtimeMeshComponent"));
+	RealtimeMeshComponent->SetMobility(EComponentMobility::Movable);
+	RealtimeMeshComponent->SetGenerateOverlapEvents(false);
+	RealtimeMeshComponent->SetCollisionProfileName(UCollisionProfile::BlockAll_ProfileName);
+
+	SetRootComponent(RealtimeMeshComponent);
+
+	//RealtimeMeshComponent->CollisionType = ECollisionTraceFlag::CTF_UseDefault;
 #endif
+	
 }
 
 // Called when the game starts or when spawned
 void AChunk::BeginPlay()
 {
 	Super::BeginPlay();
-	//RealtimeMesh = GetRealtimeMeshComponent()->InitializeRealtimeMesh<URealtimeMeshSimple>();
-	//RealtimeMesh->SetupMaterialSlot(0, TEXT("PRIMARY MATERIAL"), primaryMaterial);
+	
+	
 #ifdef USE_PROCEDURAL_MESH
 	ProceduralMesh->SetMaterial(0, primaryMaterial);
+#else
+	realtimeMesh = RealtimeMeshComponent->InitializeRealtimeMesh<URealtimeMeshSimple>();
+	realtimeMesh->SetupMaterialSlot(0, TEXT("PRIMARY MATERIAL"), primaryMaterial);
+
 #endif
 	meshingTask = MakeUnique<FAsyncTask<FGenerateChunkMeshTask>>(this);
 	MarkMeshDirty();
@@ -79,7 +94,11 @@ void AChunk::CreateMeshAsync()
 
 void AChunk::ClearMeshSection(int32 sectionNum)
 {
+#ifdef USE_PROCEDURAL_MESH
 	ProceduralMesh->ClearMeshSection(sectionNum);
+#else
+	realtimeMesh->RemoveSection(meshSectionKey);
+#endif
 	bMeshCreated = false;
 }
 void AChunk::MarkMeshReady()
@@ -100,6 +119,7 @@ void AChunk::ApplyMesh()
 		FMeshData& meshData = *meshingTask->GetTask().meshData;
 		if (meshData.Positions.Num() > 3)
 		{
+#ifdef USE_PROCEDURAL_MESH
 			ProceduralMesh->CreateMeshSection(0,
 				meshData.Positions,
 				meshData.Triangles,
@@ -108,7 +128,21 @@ void AChunk::ApplyMesh()
 				meshData.Colors,
 				TArray<FProcMeshTangent>{}, true);
 			bMeshCreated.store(true);
+#else
+		
+			if (!meshSectionKey.IsValid())
+			{
+				FRealtimeMeshSectionConfig config{ ERealtimeMeshSectionDrawType::Dynamic, 0 };
+				meshSectionKey = realtimeMesh->CreateMeshSection(0, config, meshData, true);
+			}
+			else
+			{
+				realtimeMesh->UpdateSectionMesh(meshSectionKey, meshData);
+			}
 			
+
+#endif
+
 			
 		}
 		meshingTask->GetTask().ResetData();
@@ -117,58 +151,7 @@ void AChunk::ApplyMesh()
 		//return true;
 	}
 	//return false;
-	
-#ifdef USE_PROCEDURAL_MESH
-	/*
-	AsyncTask(ENamedThreads::GameThread, [&, meshData]() {
-		if (bMeshCreated && !bPendingDestroy.load())
-		{
-			ProceduralMesh->ClearMeshSection(0);
-		}
-		if (meshData->Positions.Num() > 3)
-		{
-			ProceduralMesh->CreateMeshSection(0,
-				meshData->Positions,
-				meshData->Triangles,
-				meshData->Normals,
-				meshData->UV0,
-				meshData->Colors,
-				TArray<FProcMeshTangent>{}, true);
-				bMeshCreated.store(true);
-		}
-		CancelORDeleteMeshingTask();
 
-		});
-	*/
-	
-			
-	
-		
-#else
-	Async(EAsyncExecution::TaskGraphMainThread, [&, meshData]()
-		{
-			if (bMeshCreated && !bPendingDestroy.load() && meshData->Positions.Num() > 3)
-			{
-				RealtimeMesh->UpdateSectionMesh(meshSectionKey, *meshData);
-			}
-			else if (meshData->Positions.Num() > 3)
-			{
-				FRealtimeMeshLODKey LODkey = 0;
-				FRealtimeMeshSectionConfig SectionConfig(ERealtimeMeshSectionDrawType::Static, 0);
-				SectionConfig.bCastsShadow = true;
-				SectionConfig.bForceOpaque = false;
-				SectionConfig.bIsVisible = true;
-				SectionConfig.bIsMainPassRenderable = true;
-				meshSectionKey = RealtimeMesh->CreateMeshSection(LODkey, SectionConfig, *meshData, true);
-				bMeshCreated.store(true);
-				
-			}
-			CancelORDeleteMeshingTask();
-			//AsyncTask(ENamedThreads::GameThread, [&]() { });
-			
-		});
-
-#endif
 }
 
 bool AChunk::MarkMeshDirty()
