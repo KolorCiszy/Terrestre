@@ -49,13 +49,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Chunk region data")
 	uint8 RegionLoadDistance = 1;
 
-	/* How many chunks can spawn during one chunk manager tick */
+	/* How many chunks can be moved during one chunk manager tick */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Chunk manager")
-	uint8 ChunksToSpawnPerTick = 10;
-
-	/* How many chunks can despawn during one chunk manager tick */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Chunk manager")
-	uint8 ChunksToDespawnPerTick = 15;
+	uint8 ChunksToMovePerTick = 32;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Chunk manager")
 	FVector DefaultPlayerSpawnLocation;
@@ -78,6 +74,8 @@ public:
 	AChunk* GetChunkAtLocation(FVector location);
 
 	FBlockPalette* GetChunkBlockPalette(FVector chunkLocation);
+
+	TArray<FFluidState, TInlineAllocator<AChunk::Volume>>* GetChunkFluidStates(FVector chunkLocation);
 	/* Thread safe */
 	bool BulkUnpackChunkBlocks(FVector chunkLocation, TArray<FBlockState, TInlineAllocator<AChunk::Volume>>& output);
 
@@ -183,7 +181,7 @@ private:
 
 	FQueuedThreadPool* ChunkRegionGenerationTP;
 
-	std::chrono::steady_clock::time_point tickStart;;
+	std::chrono::steady_clock::time_point tickStart;
 	decltype(tickStart) tickEnd;
 	std::chrono::duration<double, std::milli> tickTime; //= std::chrono::duration<double, std::milli>(end - start);
 };

@@ -12,6 +12,7 @@
 //#define USE_PROCEDURAL_MESH
 
 struct FRealtimeMeshSimpleMeshData;
+struct FFluidState;
 using FMeshData = FRealtimeMeshSimpleMeshData;
 class UBoxComponent;
 class UProceduralMeshComponent;
@@ -55,6 +56,8 @@ public:
 	bool IsEmpty() const;
 	UFUNCTION(BlueprintCallable, Category = "Chunk")
 	bool ModifyBlockAtLocalPosition(const FIntVector localPos, const FBlockState& newBlock, bool bRequestMeshUpdate = true);
+
+
 	
 	/* Checks if give location is within chunk bounds*/
 	UFUNCTION(BlueprintPure, CAtegory = "Chunk")
@@ -65,7 +68,6 @@ public:
 protected:
 	
 	
-
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
@@ -93,15 +95,12 @@ private:
 	std::atomic<bool> bMeshReady;
 
 	bool bMeshDirty;
-
-	
-
-	//TObjectPtr<URealtimeMeshSimple> RealtimeMesh;
-	
-	//FCriticalSection mutex;
 	
 	/* Get Chunk's block data stored in a form of indexed palette, the data is owned by chunk manager */
 	FBlockPalette* GetBlockPalette() const;
+
+	/* Get Chunk's fluid data stored in an array, the data is owned by chunk manager */
+	TArray<FFluidState, TInlineAllocator<AChunk::Volume>>* GetFluidStates() const;
 
 	UFUNCTION()
 	void CreateMeshAsync();
@@ -112,32 +111,26 @@ private:
 
 	TUniquePtr<FAsyncTask<FGenerateChunkMeshTask>> meshingTask;
 
-
-	
-
-
-	UPROPERTY(Category = "Procedural Mesh", VisibleAnywhere, BlueprintReadOnly, meta = (ExposeFunctionCategories = "Mesh,Rendering,Physics,Components|StaticMesh", AllowPrivateAccess = "true"))
-	TObjectPtr<UProceduralMeshComponent> ProceduralMesh;
-
-	UPROPERTY()
+	UPROPERTY(Category = "Realtime Mesh", VisibleAnywhere, BlueprintReadOnly, meta = (ExposeFunctionCategories = "Mesh,Rendering,Physics,Components|StaticMesh", AllowPrivateAccess = "true"))
 	TObjectPtr<URealtimeMeshComponent> RealtimeMeshComponent;
 
 	FRealtimeMeshSectionKey meshSectionKey;
 	
-
 	UPROPERTY()
 	URealtimeMeshSimple* realtimeMesh;
 
 	bool SweepTestForVisibility(TArray<FHitResult>& sweepResult, FVector startLocation);
 
-	AChunk* GetNeighbourChunk(EDirections direction);
+	AChunk* GetNeighbourChunk(EDirections direction) const;
 	
 	UPROPERTY(EditAnywhere)
-	UMaterialInterface* primaryMaterial;
+	UMaterialInterface* BlockMaterial;
 
+	UPROPERTY(EditAnywhere)
+	UMaterialInterface* FluidMaterial;
 	
 	UFUNCTION()		// * Always executes on the game thread
 	void ApplyMesh();
-	FORCEINLINE
+	
 	void ClearMeshSection(int32 sectionNum);
 };

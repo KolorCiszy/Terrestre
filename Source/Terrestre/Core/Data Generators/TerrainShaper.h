@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "FastNoiseSettings.h"
+#include "DataRegistry.h"
 #include "TerrainShaper.generated.h"
 
 class UFastNoiseWrapper;
@@ -26,7 +27,9 @@ public:
 	
 	static inline float const SQUEEZE_FACTOR = 0.012f;
 	/* Generates Terrain Shape for given chunk location, outputing a temp heightmap for further generator use */
-	static void GenerateTerrainShape(TArray<FBlockState, TInlineAllocator<AChunk::Volume>>& chunkBlocks, FVector chunkLocation, bool& bDensitySignChange, TArray<int16>& heightMap);
+	static void GenerateTerrainShape(TArray<FBlockState, TInlineAllocator<AChunk::Volume>>& chunkBlocks,
+									TArray<FFluidState, TInlineAllocator<AChunk::Volume>>& fluidStates, 
+									FVector chunkLocation, bool& bDensitySignChange, TArray<int16>& heightMap);
 	
 	void Initialize();
 

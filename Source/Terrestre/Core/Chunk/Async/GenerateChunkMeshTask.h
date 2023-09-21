@@ -23,14 +23,21 @@ class FGenerateChunkMeshTask : public FNonAbandonableTask
 
 public: 
 	FGenerateChunkMeshTask() = delete;
-	FGenerateChunkMeshTask(TObjectPtr<AChunk> chunkOwner) : chunk{ chunkOwner }, meshData{ MakeUnique<FMeshData>()} 
+	FGenerateChunkMeshTask(TObjectPtr<AChunk> chunkOwner)
 	{
+		chunk = chunkOwner;
+		blockStateMeshData = MakeUnique<FMeshData>();
+		fluidStateMeshData = MakeUnique<FMeshData>();
 		ResetData();
 	};
-	//* the chunk that requested generation
+	//* the chunk that owns this task generation
 	TObjectPtr<AChunk> chunk;
-	//* mesh data this task will generate
-	TUniquePtr<FMeshData> meshData;
+
+	/* mesh data for blocks this task will generate */
+	TUniquePtr<FMeshData> blockStateMeshData;
+
+	/* mesh data for blocks this task will generate */
+	TUniquePtr<FMeshData> fluidStateMeshData;
 
 
 	
@@ -39,6 +46,10 @@ private:
 	
 	void DoWork();
 	
+	void GenerateBlockStateMesh();
+
+	void GenerateFluidStateMesh();
+
 	bool IsVisibleFace(FIntVector localPos, EDirections direction);
 	
 	bool forwardChunkDataValid;
@@ -66,6 +77,15 @@ private:
 
 
 	FORCEINLINE TStatId GetStatId() const { RETURN_QUICK_DECLARE_CYCLE_STAT(FGenerateChunkMeshTask, STATGROUP_ThreadPoolAsyncTasks); }
-	
+	void ClearMeshData(FMeshData& meshdata)
+	{
+		meshdata.Positions.Empty();
+		meshdata.Tangents.Empty();
+		meshdata.Colors.Empty();
+		meshdata.Triangles.Empty();
+		meshdata.UV0.Empty();
+	}
 };
+
+
 

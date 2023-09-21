@@ -7,7 +7,7 @@
 void FGenerateChunkRegionDataTask::DoWork()
 {
 	
-	newRegion.Data.Reserve(FChunkRegion::RegionVolume);
+	newRegion.ChunkData.Reserve(FChunkRegion::RegionVolume);
 	for (uint8 x = 0; x < FChunkRegion::RegionSize; x++)
 	{
 		for (uint8 y = 0; y < FChunkRegion::RegionSize; y++)
@@ -18,12 +18,18 @@ void FGenerateChunkRegionDataTask::DoWork()
 			{
 				FVector chunkLocation = FVector((regionID * FChunkRegion::RegionSizeScaled) + (FIntVector{ x,y,z } *FIntVector(AChunk::SizeScaled)));
 				TArray<FBlockState, TInlineAllocator<AChunk::Volume>> blocks{};
-				
+				TArray<FFluidState, TInlineAllocator<AChunk::Volume>> fluidStates{};
+				blocks.SetNumUninitialized(AChunk::Volume);
+				fluidStates.Init(FFluidState{ UINT8_MAX, 0 }, AChunk::Volume);
+
 				bool bSignChange = false;
-				UTerrainShaper::GenerateTerrainShape(blocks, chunkLocation, bSignChange, heightMap);
+				UTerrainShaper::GenerateTerrainShape(blocks, fluidStates, chunkLocation, bSignChange, heightMap);
 				//UTerrainSurfaceDecorator::GenerateTerrainSurfaceDecorations(blocks, chunkLocation, bSignChange, heightMap);
-				FBlockPalette palette = blocks;
-				newRegion.Data.Add(MoveTemp(chunkLocation), MoveTemp(palette));
+				//FBlockPalette palette = blocks;
+
+				FChunkData chunkData{ blocks, MoveTemp(fluidStates) };
+				
+				newRegion.ChunkData.Add(MoveTemp(chunkLocation), MoveTemp(chunkData));
 			}
 		}
 	}
