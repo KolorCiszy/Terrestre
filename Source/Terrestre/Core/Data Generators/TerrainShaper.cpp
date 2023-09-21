@@ -1,6 +1,6 @@
 #include "TerrainShaper.h"
 #include "FastNoiseWrapper.h"
-#include "Terrestre/Core/Chunk/Storage/BlockPalette.h"
+#include "Terrestre/Core/Chunk/Storage/ChunkData.h"
 #include "Terrestre/Core/Chunk/ChunkUtilityLib.h"
 #include "Terrestre/Core/Chunk/ChunkManager.h"
 #include "DataRegistry/Public/DataRegistrySubsystem.h"
@@ -134,11 +134,13 @@ float UTerrainShaper::GetDensityAtXYZ_BP(double worldXPos, double worldYPos, dou
 	return UChunkUtilityLib::GetChunkManager()->TerrainShaper->GetDensityAtXYZ_Native(worldXPos, worldYPos, worldZPos);
 }
 
-void UTerrainShaper::GenerateTerrainShape(TArray<FBlockState, TInlineAllocator<AChunk::Volume>>& chunkBlocks, FVector chunkLocation, bool& bDensitySignChange, TArray<int16>& heightMap)
+void UTerrainShaper::GenerateTerrainShape(TArray<FBlockState, TInlineAllocator<AChunk::Volume>>& chunkBlocks, 
+											TArray<FFluidState, TInlineAllocator<AChunk::Volume>>& fluidStates,
+											FVector chunkLocation, bool& bDensitySignChange, TArray<int16>& heightMap)
 {
 	
 	auto terrainShaper = UChunkUtilityLib::GetChunkManager()->TerrainShaper;
-	chunkBlocks.SetNumUninitialized(AChunk::Volume);
+	
 	chunkLocation /= AChunk::VoxelSize;
 	auto densityNoise = UChunkUtilityLib::GetChunkManager()->TerrainShaper->DensityNoise;
 	float previousDensity = terrainShaper->GetDensityAtXYZ_Native(chunkLocation.X, chunkLocation.Y, chunkLocation.Z);
@@ -173,6 +175,11 @@ void UTerrainShaper::GenerateTerrainShape(TArray<FBlockState, TInlineAllocator<A
 						heightMap[index - z * AChunk::SizeSquared] = worldZPos;
 						bDensitySignChange = true;
 					}
+					if (worldZPos <= SEA_LEVEL)
+					{
+						*(fluidStates.GetData() + index) = FFluidState(1 , 100);
+
+					}
 				}
 				else
 				{
@@ -191,7 +198,7 @@ void UTerrainShaper::GenerateTerrainShape(TArray<FBlockState, TInlineAllocator<A
 					{
 						*(chunkBlocks.GetData() + index) = FBlockState(1);
 					}
-					
+					*(fluidStates.GetData() + index) = FFluidState(UINT8_MAX, 100);
 					
 				}
 				

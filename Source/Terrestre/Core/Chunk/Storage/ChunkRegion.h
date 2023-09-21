@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 #include "BlockPalette.h"
 #include "Terrestre/Core/Chunk/Chunk.h"
-
+#include "ChunkData.h"
 
 
 
@@ -19,16 +19,16 @@ struct FChunkRegion
 	FChunkRegion(FChunkRegion&& move)
 	{
 		RefCount = move.RefCount;
-		Data = MoveTemp(Data);
+		ChunkData = MoveTemp(ChunkData);
 	}
 	FChunkRegion& operator=(FChunkRegion&& move)
 	{
 		RefCount = move.RefCount;
-		Data = MoveTemp(move.Data);
+		ChunkData = MoveTemp(move.ChunkData);
 		return *this;
 	}
 	/* Data hash map linking chunk location to corresponding block palette */
-	TMap<FVector, FBlockPalette> Data;
+	TMap<FVector, FChunkData> ChunkData;
 	/* How many chunks are referencing data from this region*/
 	int32 RefCount;
 	/* Amount of chunks in one region on every axis */
@@ -37,11 +37,6 @@ struct FChunkRegion
 	static constexpr uint16 RegionVolume = RegionSize * RegionSize * RegionSize;
 	/* The size of chunk region on every axis, scaled to unreal units */
 	static inline FIntVector RegionSizeScaled{ RegionSize * AChunk::SizeScaled };
-	/*
-	bool operator==(const FChunkRegion& other)
-	{
-		return ID == other.ID;
-	}
-	*/
+	
 	void MarkPendingSave();
 };

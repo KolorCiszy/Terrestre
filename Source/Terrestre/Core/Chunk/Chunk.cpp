@@ -49,6 +49,8 @@ AChunk::AChunk()
 	
 }
 
+
+
 // Called when the game starts or when spawned
 void AChunk::BeginPlay()
 {
@@ -59,8 +61,8 @@ void AChunk::BeginPlay()
 	ProceduralMesh->SetMaterial(0, primaryMaterial);
 #else
 	realtimeMesh = RealtimeMeshComponent->InitializeRealtimeMesh<URealtimeMeshSimple>();
-	realtimeMesh->SetupMaterialSlot(0, TEXT("PRIMARY MATERIAL"), primaryMaterial);
-
+	realtimeMesh->SetupMaterialSlot(0, TEXT("BLOCK STATES MATERIAL"), BlockMaterial);
+	realtimeMesh->SetupMaterialSlot(1, TEXT("BLOCK STATES MATERIAL"), FluidMaterial);
 #endif
 	meshingTask = MakeUnique<FAsyncTask<FGenerateChunkMeshTask>>(this);
 	MarkMeshDirty();
@@ -71,6 +73,12 @@ FBlockPalette* AChunk::GetBlockPalette() const
 	return UChunkUtilityLib::GetChunkManager()->GetChunkBlockPalette(this->GetActorLocation());
 
 }
+TArray<FFluidState, TInlineAllocator<AChunk::Volume>>* AChunk::GetFluidStates() const
+{
+	return UChunkUtilityLib::GetChunkManager()->GetChunkFluidStates(this->GetActorLocation());
+}
+
+
 
 
 // Called every frame
@@ -99,8 +107,8 @@ void AChunk::ClearMeshSection(int32 sectionNum)
 #else
 	if (bMeshCreated)
 	{
-		realtimeMesh->SetSectionVisibility(meshSectionKey, false);
-		//bMeshCreated = false;
+		realtimeMesh->Reset(false);
+		bMeshCreated = false;
 	}
 #endif
 }
@@ -120,7 +128,7 @@ void AChunk::ApplyMesh()
 	if (meshingTask->IsDone())
 	{
 		bMeshingTaskDone = true;
-		FMeshData& meshData = *meshingTask->GetTask().meshData;
+		FMeshData& meshData = *meshingTask->GetTask().blockStateMeshData;
 
 #ifdef USE_PROCEDURAL_MESH
 		if (meshData.Positions.Num() > 3)
@@ -183,7 +191,7 @@ bool AChunk::IsEmpty() const
 	return GetBlockPalette()->IsEmpty();
 } 
 
-AChunk* AChunk::GetNeighbourChunk(EDirections direction)
+AChunk* AChunk::GetNeighbourChunk(EDirections direction) const
 {
 	FVector location = GetActorLocation();
 	switch(direction)
@@ -210,6 +218,7 @@ FBlockState AChunk::GetBlockAtLocalPosition(const FIntVector localPos) const
 	int16 index = UChunkUtilityLib::LocalBlockPosToIndex(localPos);
 	return GetBlockPalette()->GetBlockAtIndex(index);
 }
+
 bool AChunk::ModifyBlockAtLocalPosition(const FIntVector localPos, const FBlockState& newBlock, bool bRequestMeshUpdate)
 {
  	if(bMeshDirty)
@@ -287,6 +296,7 @@ void AChunk::CancelMeshingTask()
 		
 	}
 }
+
 void AChunk::MarkPendingDestroy() 
 {
 	if(bPendingDestroy.load())
@@ -298,16 +308,19 @@ void AChunk::MarkPendingDestroy()
 	CancelMeshingTask();
 	bReadyToDestroy.store(1);
 };
+
 void AChunk::EndPlay(EEndPlayReason::Type reason)
 {
 	MarkPendingDestroy();
 }
+
 bool AChunk::IsInsideBounds(FVector inWorldLocation)
 {
 	FBox Box{};
 	Box.BuildAABB(GetActorLocation(), SizeScaled);
 	return Box.IsInside(inWorldLocation);
 }
+
 FName AChunk::OnVisibleByCharacter_Implementation(ACharacter* visibleBy, const FHitResult& traceResult)
 {
 	//GEngine->AddOnScreenDebugMessage(0, 0.5f, FColor::Cyan, TEXT("lalala"), true);
@@ -315,6 +328,7 @@ FName AChunk::OnVisibleByCharacter_Implementation(ACharacter* visibleBy, const F
 	int64 blockID = GetBlockAtLocalPosition(UChunkUtilityLib::WorldLocationToLocalBlockPos(traceLocation)).blockID;
 	return BlockData::GetBlockDisplayName(blockID);
 }
+
 bool AChunk::OnLeftMouseButton_Implementation(ACharacter* clickedBy, const FHitResult& traceResult, int64 heldItemID)
 {
 	if(TObjectPtr<APlayerCharacter> player = Cast<APlayerCharacter>(clickedBy))

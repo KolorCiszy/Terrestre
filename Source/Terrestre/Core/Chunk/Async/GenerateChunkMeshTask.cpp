@@ -3,11 +3,11 @@
 #include "DataRegistry/Public/DataRegistrySubsystem.h"
 #include "Terrestre/Core/Block/BlockData.h"
 #include "Terrestre/Core/Chunk/Misc/Directions.h"
-
 #include "Terrestre/Core/Chunk/ChunkManager.h"
 #include "Terrestre/Core/Chunk/Misc/ChunkHelper.h"
 #include "Terrestre/Core/Chunk/ChunkUtilityLib.h"
 #include "Terrestre/Core/Chunk/Storage/BlockState.h"
+#include "Terrestre/Core/Chunk/Storage/FluidState.h"
 #include "Terrestre/Core/Chunk/Storage/BlockPalette.h"
 
 void FGenerateChunkMeshTask::ResetData()
@@ -18,11 +18,8 @@ void FGenerateChunkMeshTask::ResetData()
 	leftChunkDataValid = false;
 	upChunkDataValid = false;
 	downChunkDataValid = false;
-	meshData.Get()->Positions.Empty();
-	meshData.Get()->Colors.Empty();
-	meshData.Get()->Triangles.Empty();
-	meshData.Get()->Normals.Empty();
-	meshData.Get()->UV0.Empty();
+	ClearMeshData(*blockStateMeshData);
+	ClearMeshData(*fluidStateMeshData);
 	uncompressedBlocks.Empty();
 	uncompressedBlocksF.Empty();
 	uncompressedBlocksB.Empty();
@@ -31,30 +28,26 @@ void FGenerateChunkMeshTask::ResetData()
 	uncompressedBlocksU.Empty();
 	uncompressedBlocksD.Empty();
 }
-
-
-void FGenerateChunkMeshTask::DoWork()
+void FGenerateChunkMeshTask::GenerateBlockStateMesh()
 {
-	
-	if(chunk->IsEmpty())
+	if (chunk->IsEmpty())
 	{
-		chunk->MarkMeshReady();
 		return;
 	}
 
 	FChunkHelper chunkHelper;
 	chunkHelper.SetSize(AChunk::Volume);
-	
+
 	/* Cache data from neighbour chunks */
-	
+
 	FVector forwardChunkLocation = chunk->GetActorLocation() + FVector{ AChunk::SizeScaled.X, 0, 0 };
 	FVector backwardChunkLocation = chunk->GetActorLocation() - FVector{ AChunk::SizeScaled.X, 0 ,0 };
 	FVector rightChunkLocation = chunk->GetActorLocation() + FVector{ 0 , AChunk::SizeScaled.Y, 0 };
 	FVector leftChunkLocation = chunk->GetActorLocation() - FVector{ 0, AChunk::SizeScaled.Y, 0 };
-	FVector upChunkLocation = chunk->GetActorLocation() + FVector{0, 0, AChunk::SizeScaled.Z};
+	FVector upChunkLocation = chunk->GetActorLocation() + FVector{ 0, 0, AChunk::SizeScaled.Z };
 	FVector downChunkLocation = chunk->GetActorLocation() - FVector{ 0,0, AChunk::SizeScaled.Z };
 
-	
+
 	if (UChunkUtilityLib::GetChunkManager()->BulkUnpackChunkBlocks(forwardChunkLocation, uncompressedBlocksF))
 	{
 		forwardChunkDataValid = true;
@@ -79,63 +72,30 @@ void FGenerateChunkMeshTask::DoWork()
 	{
 		downChunkDataValid = true;
 	};
-	
-	/*
-	if (FChunkRegion* region = UChunkUtilityLib::GetChunkManager()->ActiveRegionsMap.Find(UChunkUtilityLib::GetRegionID(backwardChunkLocation)))
-	{
-		backwardChunkData = &region->Data[backwardChunkLocation];
-		
-		backwardChunkData->BulkUnpack(uncompressedBlocksB);
-	}
-	if (FChunkRegion* region = UChunkUtilityLib::GetChunkManager()->ActiveRegionsMap.Find(UChunkUtilityLib::GetRegionID(leftChunkLocation)))
-	{
-		leftChunkData = &region->Data[leftChunkLocation];
-		
-		leftChunkData->BulkUnpack(uncompressedBlocksL);
-	}
-	if (FChunkRegion* region = UChunkUtilityLib::GetChunkManager()->ActiveRegionsMap.Find(UChunkUtilityLib::GetRegionID(rightChunkLocation)))
-	{
-		rightChunkData = &region->Data[rightChunkLocation];
-		
-		rightChunkData->BulkUnpack(uncompressedBlocksR);
-	}
-	if (FChunkRegion* region = UChunkUtilityLib::GetChunkManager()->ActiveRegionsMap.Find(UChunkUtilityLib::GetRegionID(upChunkLocation)))
-	{
-		upChunkData = &region->Data[upChunkLocation];
-		
-		upChunkData->BulkUnpack(uncompressedBlocksU);
-	}
-	if (FChunkRegion* region = UChunkUtilityLib::GetChunkManager()->ActiveRegionsMap.Find(UChunkUtilityLib::GetRegionID(downChunkLocation)))
-	{
-		downChunkData = &region->Data[downChunkLocation];
-		
-		downChunkData->BulkUnpack(uncompressedBlocksD);
-	}
-	*/
+
 	UChunkUtilityLib::GetChunkManager()->BulkUnpackChunkBlocks(chunk->GetActorLocation(), uncompressedBlocks);
 
-
 	/* Iterate over chunk's blocks */
-	for(int16 x{}; x<AChunk::Size; x++)
+	for (int16 x{}; x < AChunk::Size; x++)
 	{
 		for (int16 y{}; y < AChunk::Size; y++)
 		{
 			for (int16 z{}; z < AChunk::Size; z++)
 			{
-				
+
 				FIntVector currentPosition(x, y, z);
 				int32 currentIndex{ UChunkUtilityLib::LocalBlockPosToIndex(currentPosition) };
 				/* Get Current block */
 				FBlockState& block = *(uncompressedBlocks.GetData() + currentIndex);
-				
+
 				if (block.IsAirBlock())
 				{
 					continue;
 				}
-				
 
-				int16 x1 = x + 1;   
-				int16 z1 = z + 1; 
+
+				int16 x1 = x + 1;
+				int16 z1 = z + 1;
 				int16 y1 = y + 1;
 				int16 runLength = 0;
 				/* Index of block that's being currently compared in the chunkHelper */
@@ -162,10 +122,10 @@ void FGenerateChunkMeshTask::DoWork()
 					{
 						// Create a quad and write it directly to the buffer
 						CreateQuad(FVector(x, y, z + runLength) * AChunk::VoxelSize,
-								   FVector(x1, y, z + runLength) * AChunk::VoxelSize,
-								   FVector(x, y, z) * AChunk::VoxelSize,
-								   FVector(x1, y, z) * AChunk::VoxelSize,
-								   FVector::LeftVector, block);
+							FVector(x1, y, z + runLength) * AChunk::VoxelSize,
+							FVector(x, y, z) * AChunk::VoxelSize,
+							FVector(x1, y, z) * AChunk::VoxelSize,
+							FVector::LeftVector, block);
 
 					}
 				}
@@ -217,10 +177,10 @@ void FGenerateChunkMeshTask::DoWork()
 					if (runLength > 0)
 					{
 						CreateQuad(FVector(x1, y, z + runLength) * AChunk::VoxelSize,
-				   				   FVector(x1, y1, z + runLength) * AChunk::VoxelSize,
-								   FVector(x1, y, z) * AChunk::VoxelSize,
-								   FVector(x1, y1, z) * AChunk::VoxelSize,
-								   FVector::ForwardVector, block);
+							FVector(x1, y1, z + runLength) * AChunk::VoxelSize,
+							FVector(x1, y, z) * AChunk::VoxelSize,
+							FVector(x1, y1, z) * AChunk::VoxelSize,
+							FVector::ForwardVector, block);
 
 					}
 				}
@@ -245,10 +205,10 @@ void FGenerateChunkMeshTask::DoWork()
 					if (runLength > 0)
 					{
 						CreateQuad(FVector(x, y1, runLength + z) * AChunk::VoxelSize,
-								   FVector(x, y, z + runLength) * AChunk::VoxelSize,
-								   FVector(x, y1, z) * AChunk::VoxelSize,
-								   FVector(x, y, z) * AChunk::VoxelSize,
-								   FVector::BackwardVector, block);
+							FVector(x, y, z + runLength) * AChunk::VoxelSize,
+							FVector(x, y1, z) * AChunk::VoxelSize,
+							FVector(x, y, z) * AChunk::VoxelSize,
+							FVector::BackwardVector, block);
 
 					}
 				}
@@ -273,10 +233,10 @@ void FGenerateChunkMeshTask::DoWork()
 					if (runLength > 0)
 					{
 						CreateQuad(FVector(x, y, z1) * AChunk::VoxelSize,
-								   FVector(x, y1, z1) * AChunk::VoxelSize,
-								   FVector(x + runLength, y, z1) * AChunk::VoxelSize, // bylo x + runlength
-								   FVector(x + runLength, y1, z1) * AChunk::VoxelSize, // bylo x + runlength
-								   FVector::UpVector, block);
+							FVector(x, y1, z1) * AChunk::VoxelSize,
+							FVector(x + runLength, y, z1) * AChunk::VoxelSize, // bylo x + runlength
+							FVector(x + runLength, y1, z1) * AChunk::VoxelSize, // bylo x + runlength
+							FVector::UpVector, block);
 
 					}
 				}
@@ -303,85 +263,39 @@ void FGenerateChunkMeshTask::DoWork()
 					if (runLength > 0)
 					{
 						CreateQuad(FVector(x + runLength, y, z) * AChunk::VoxelSize,
-								   FVector(x + runLength, y1, z) * AChunk::VoxelSize,
-								   FVector(x, y, z) * AChunk::VoxelSize,
-								   FVector(x, y1, z) * AChunk::VoxelSize,
-								   FVector::DownVector, block);
+							FVector(x + runLength, y1, z) * AChunk::VoxelSize,
+							FVector(x, y, z) * AChunk::VoxelSize,
+							FVector(x, y1, z) * AChunk::VoxelSize,
+							FVector::DownVector, block);
 
 					}
 				}
 				runLength = 0;
-
-
-				/*
-				for(EDirections direction : TEnumRange<EDirections>())
-				{
-					
-					if(IsVisibleFace(currentPosition, direction))
-					{
-						FVector tlv; 
-						FVector trv;
-						FVector blv;
-						FVector brv;
-						FVector normal;
-						FVector currentPosScaled = static_cast<FVector>(currentPosition) * AChunk::VoxelSize;
-						switch (direction)
-						{
-						case EDirections::Forward: 
-							tlv = currentPosScaled + ForwardVecScaled + RightVecScaled;
-							trv = currentPosScaled + ForwardVecScaled;
-							blv = tlv + DownVecScaled;
-							brv = trv + DownVecScaled;
-							normal = FVector::ForwardVector;	
-							break;
-						case EDirections::Backward:
-							tlv = currentPosScaled;
-							trv = tlv + RightVecScaled;
-							blv = tlv + DownVecScaled;
-							brv = trv + DownVecScaled; 
-							normal = FVector::BackwardVector;
-							break;
-						case EDirections::Right: 
-							tlv = currentPosScaled + RightVecScaled;
-							trv = tlv + ForwardVecScaled;
-							blv = tlv + DownVecScaled;
-							brv = trv + DownVecScaled;
-							normal = FVector::RightVector;
-							break;
-						case EDirections::Left: 
-							tlv = currentPosScaled + ForwardVecScaled;
-							trv = currentPosScaled;
-							blv = tlv + DownVecScaled;
-							brv = trv + DownVecScaled;
-							normal = FVector::LeftVector;
-							break;
-						case EDirections::Up:
-							tlv = currentPosScaled + ForwardVecScaled;
-							trv = tlv + RightVecScaled;
-							blv = currentPosScaled;
-							brv = currentPosScaled + RightVecScaled;
-							normal = FVector::UpVector; 
-							break;
-						case EDirections::Down:
-							tlv = currentPosScaled + DownVecScaled;
-							trv = tlv + RightVecScaled;
-							blv = tlv + ForwardVecScaled;
-							brv = trv + ForwardVecScaled;
-							normal = FVector::DownVector;
-							break;
-						default: 
-							break;
-						}
-						
-						CreateQuad(tlv, blv, brv, trv, normal);
-						
-					}
-
-				}
-				*/
 			}
 		}
 	}
+}
+void FGenerateChunkMeshTask::GenerateFluidStateMesh()
+{
+	TArray<FFluidState, TInlineAllocator<AChunk::Volume>>* fluidStates = chunk->GetFluidStates();
+	for (int16 x{}; x < AChunk::Size; x++)
+	{
+		for (int16 y{}; y < AChunk::Size; y++)
+		{
+			for (int16 z{}; z < AChunk::Size; z++)
+			{
+
+			}
+		}
+	}
+	
+}
+void FGenerateChunkMeshTask::DoWork()
+{
+	GenerateBlockStateMesh();
+
+	GenerateFluidStateMesh();
+
 	chunk->MarkMeshReady();	
 }
 
@@ -478,12 +392,12 @@ void FGenerateChunkMeshTask::CreateQuad(FVector tlv, FVector trv, FVector blv, F
 	{
 		return;
 	}
-	int32 nextIndex = meshData->Positions.Num();
-	meshData->Positions.Append({tlv, trv, blv, brv});
+	int32 nextIndex = blockStateMeshData->Positions.Num();
+	blockStateMeshData->Positions.Append({tlv, trv, blv, brv});
 	
-	meshData->Triangles.Append({nextIndex + 1, nextIndex + 3, nextIndex, nextIndex + 2, nextIndex, nextIndex + 3});
+	blockStateMeshData->Triangles.Append({nextIndex + 1, nextIndex + 3, nextIndex, nextIndex + 2, nextIndex, nextIndex + 3});
 
-	meshData->Normals.Append({norm,norm,norm,norm});
+	blockStateMeshData->Normals.Append({norm,norm,norm,norm});
 
 	tlv /= 100;
 	blv /= 100;
@@ -492,7 +406,7 @@ void FGenerateChunkMeshTask::CreateQuad(FVector tlv, FVector trv, FVector blv, F
 	EDirections quadDirection{};
 	if (norm == FVector::DownVector || norm == FVector::UpVector)
 	{
-		meshData->UV0.Append({
+		blockStateMeshData->UV0.Append({
 		FVector2D{blv.X, blv.Y}, FVector2D{brv.X, brv.Y}, FVector2D{tlv.X, tlv.Y}, FVector2D{trv.X, trv.Y}
 			});
 		if(FMath::TruncToInt32(norm.Z) == 1)
@@ -507,7 +421,7 @@ void FGenerateChunkMeshTask::CreateQuad(FVector tlv, FVector trv, FVector blv, F
 	}
 	else if (norm == FVector::ForwardVector || norm == FVector::BackwardVector)
 	{
-		meshData->UV0.Append({
+		blockStateMeshData->UV0.Append({
 		FVector2D{blv.Y, blv.Z}, FVector2D{brv.Y, brv.Z}, FVector2D{tlv.Y, tlv.Z}, FVector2D{trv.Y, trv.Z}
 			});
 		if (FMath::TruncToInt32(norm.X) == 1)
@@ -521,7 +435,7 @@ void FGenerateChunkMeshTask::CreateQuad(FVector tlv, FVector trv, FVector blv, F
 	}	
 	else
 	{
-		meshData->UV0.Append({
+		blockStateMeshData->UV0.Append({
 		FVector2D{blv.X, blv.Z}, FVector2D{brv.X, brv.Z}, FVector2D{tlv.X, tlv.Z}, FVector2D{trv.X, trv.Z}
 			});
 		if (FMath::TruncToInt32(norm.Y) == 1)
@@ -534,8 +448,7 @@ void FGenerateChunkMeshTask::CreateQuad(FVector tlv, FVector trv, FVector blv, F
 		}
 	}
 	FColor textureIndex{ 0,0,0, static_cast<uint8>(BlockData::GetBlockTextureIndex(block.blockID, quadDirection))};
-	meshData->Colors.Append({ textureIndex, textureIndex, textureIndex, textureIndex });
-	
+	blockStateMeshData->Colors.Append({ textureIndex, textureIndex, textureIndex, textureIndex });
 	
 }
 ;
