@@ -275,16 +275,208 @@ void FGenerateChunkMeshTask::GenerateBlockStateMesh()
 		}
 	}
 }
-void FGenerateChunkMeshTask::GenerateFluidStateMesh()
+void FGenerateChunkMeshTask::GenerateWaterMesh()
 {
 	TArray<FFluidState, TInlineAllocator<AChunk::Volume>>* fluidStates = chunk->GetFluidStates();
+	
+	FChunkHelper chunkHelper;
+	chunkHelper.SetSize(AChunk::Volume);
+
 	for (int16 x{}; x < AChunk::Size; x++)
 	{
 		for (int16 y{}; y < AChunk::Size; y++)
 		{
 			for (int16 z{}; z < AChunk::Size; z++)
 			{
+				FIntVector currentPosition(x, y, z);
+				
+				int32 currentIndex{ UChunkUtilityLib::LocalBlockPosToIndex(currentPosition) };
+				/* Get Current block */
+				FFluidState& fluidState = *(fluidStates->GetData() + currentIndex);
 
+				if (fluidState.fluidID != 1)
+				{
+					continue;
+				}
+
+				int16 x1 = x + 1;
+				int16 z1 = z + 1;
+				int16 y1 = y + 1;
+				int16 runLength = 0;
+				/* Index of block that's being currently compared in the chunkHelper */
+				int32 compareFluidIndex = 0;
+				
+
+				// Left face (Y-)
+				if (!chunkHelper.visitedYN[currentIndex] && IsVisibleFace(currentPosition, EDirections::Left))
+				{
+					// Search upwards to determine run length
+					for (int16 q = z; q < AChunk::Size; q++)
+					{
+						compareFluidIndex = UChunkUtilityLib::LocalBlockPosToIndex(FIntVector{ x,y,q });
+						if ((fluidStates->GetData() + compareFluidIndex)->fluidID == 1)
+						{
+							chunkHelper.visitedYN[compareFluidIndex] = true;
+							runLength++;
+						}
+						else
+						{
+							break;
+						}
+					}
+					if (runLength > 0)
+					{
+						// Create a quad and write it directly to the buffer
+						CreateQuad(FVector(x, y, z + runLength) * AChunk::VoxelSize,
+							FVector(x1, y, z + runLength) * AChunk::VoxelSize,
+							FVector(x, y, z) * AChunk::VoxelSize,
+							FVector(x1, y, z) * AChunk::VoxelSize,
+							FVector::LeftVector, fluidState);
+
+					}
+				}
+				runLength = 0;
+				if (!chunkHelper.visitedYP[currentIndex] && IsVisibleFace(currentPosition, EDirections::Right))
+				{
+					// Search upwards to determine run length
+					for (int16 q = z; q < AChunk::Size; q++)
+					{
+						// Pre-calculate the array lookup as it is used twice
+						compareFluidIndex = UChunkUtilityLib::LocalBlockPosToIndex(FIntVector{ x,y,q });
+						if ((fluidStates->GetData() + compareFluidIndex)->fluidID == 1)
+						{
+							chunkHelper.visitedYP[compareFluidIndex] = true;
+							runLength++;
+						}
+						else
+						{
+							break;
+						}
+					}
+					if (runLength > 0)
+					{
+						CreateQuad(FVector(x1, y1, z + runLength) * AChunk::VoxelSize,
+							FVector(x, y1, z + runLength) * AChunk::VoxelSize,
+							FVector(x1, y1, z) * AChunk::VoxelSize,
+							FVector(x, y1, z) * AChunk::VoxelSize,
+							FVector::RightVector, fluidState);
+					}
+				}
+				runLength = 0;
+				//Forward (X+)
+				if (!chunkHelper.visitedXP[currentIndex] && IsVisibleFace(currentPosition, EDirections::Forward))
+				{
+					// Search upwards to determine run length
+					for (int16 q = z; q < AChunk::Size; q++)
+					{
+						compareFluidIndex = UChunkUtilityLib::LocalBlockPosToIndex(FIntVector{ x,y,q });
+						if ((fluidStates->GetData() + compareFluidIndex)->fluidID == 1)
+						{
+							chunkHelper.visitedXP[compareFluidIndex] = true;
+							runLength++;
+						}
+						else
+						{
+							break;
+						}
+					}
+					if (runLength > 0)
+					{
+						CreateQuad(FVector(x1, y, z + runLength) * AChunk::VoxelSize,
+							FVector(x1, y1, z + runLength) * AChunk::VoxelSize,
+							FVector(x1, y, z) * AChunk::VoxelSize,
+							FVector(x1, y1, z) * AChunk::VoxelSize,
+							FVector::ForwardVector, fluidState);
+
+					}
+				}
+				runLength = 0;
+				//Backward (X-)
+				if (!chunkHelper.visitedXN[currentIndex] && IsVisibleFace(currentPosition, EDirections::Backward))
+				{
+					// Search upwards to determine run length
+					for (int16 q = z; q < AChunk::Size; q++)
+					{
+						compareFluidIndex = UChunkUtilityLib::LocalBlockPosToIndex(FIntVector{ x,y,q });
+						if ((fluidStates->GetData() + compareFluidIndex)->fluidID == 1)
+						{
+							chunkHelper.visitedXN[compareFluidIndex] = true;
+							runLength++;
+						}
+						else
+						{
+							break;
+						}
+					}
+					if (runLength > 0)
+					{
+						CreateQuad(FVector(x, y1, runLength + z) * AChunk::VoxelSize,
+							FVector(x, y, z + runLength) * AChunk::VoxelSize,
+							FVector(x, y1, z) * AChunk::VoxelSize,
+							FVector(x, y, z) * AChunk::VoxelSize,
+							FVector::BackwardVector, fluidState);
+
+					}
+				}
+				runLength = 0;
+				//Up (Z+)
+				if (!chunkHelper.visitedZP[currentIndex] && IsVisibleFace(currentPosition, EDirections::Up))
+				{
+					// Search forwards to determine run length
+					for (int16 q = x; q < AChunk::Size; q++)
+					{
+						compareFluidIndex = UChunkUtilityLib::LocalBlockPosToIndex(FIntVector{ q,y,z });
+						if ((fluidStates->GetData() + compareFluidIndex)->fluidID == 1)
+						{
+							chunkHelper.visitedZP[compareFluidIndex] = true;
+							runLength++;
+						}
+						else
+						{
+							break;
+						}
+					}
+					if (runLength > 0)
+					{
+						CreateQuad(FVector(x, y, z1) * AChunk::VoxelSize,
+							FVector(x, y1, z1) * AChunk::VoxelSize,
+							FVector(x + runLength, y, z1) * AChunk::VoxelSize, // bylo x + runlength
+							FVector(x + runLength, y1, z1) * AChunk::VoxelSize, // bylo x + runlength
+							FVector::UpVector, fluidState);
+
+					}
+				}
+				runLength = 0;
+				//Down (Z-)
+				if (!chunkHelper.visitedZN[currentIndex] && IsVisibleFace(currentPosition, EDirections::Down))
+				{
+					// Search forwards to determine run length
+					for (int16 q = x; q < AChunk::Size; q++)
+					{
+						compareFluidIndex = UChunkUtilityLib::LocalBlockPosToIndex(FIntVector{ q,y,z });
+						if ((fluidStates->GetData() + compareFluidIndex)->fluidID == 1)
+						{
+							chunkHelper.visitedZN[compareFluidIndex] = true;
+							runLength++;
+						}
+						else
+						{
+							break;
+						}
+					}
+
+
+					if (runLength > 0)
+					{
+						CreateQuad(FVector(x + runLength, y, z) * AChunk::VoxelSize,
+							FVector(x + runLength, y1, z) * AChunk::VoxelSize,
+							FVector(x, y, z) * AChunk::VoxelSize,
+							FVector(x, y1, z) * AChunk::VoxelSize,
+							FVector::DownVector, fluidState);
+
+					}
+				}
+				runLength = 0;
 			}
 		}
 	}
@@ -294,7 +486,7 @@ void FGenerateChunkMeshTask::DoWork()
 {
 	GenerateBlockStateMesh();
 
-	GenerateFluidStateMesh();
+	GenerateWaterMesh();
 
 	chunk->MarkMeshReady();	
 }
@@ -387,17 +579,17 @@ bool FGenerateChunkMeshTask::IsVisibleFace(FIntVector localPos, EDirections dire
 }
 void FGenerateChunkMeshTask::CreateQuad(FVector tlv, FVector trv, FVector blv, FVector brv, FVector norm, const FBlockState& block)
 {
-	
-	if(BlockData::GetBlockMeshType(block.blockID) == EBlockMeshType::NONE)
+
+	if (BlockData::GetBlockMeshType(block.blockID) == EBlockMeshType::NONE)
 	{
 		return;
 	}
 	int32 nextIndex = blockStateMeshData->Positions.Num();
-	blockStateMeshData->Positions.Append({tlv, trv, blv, brv});
-	
-	blockStateMeshData->Triangles.Append({nextIndex + 1, nextIndex + 3, nextIndex, nextIndex + 2, nextIndex, nextIndex + 3});
+	blockStateMeshData->Positions.Append({ tlv, trv, blv, brv });
 
-	blockStateMeshData->Normals.Append({norm,norm,norm,norm});
+	blockStateMeshData->Triangles.Append({ nextIndex + 1, nextIndex + 3, nextIndex, nextIndex + 2, nextIndex, nextIndex + 3 });
+
+	blockStateMeshData->Normals.Append({ norm,norm,norm,norm });
 
 	tlv /= 100;
 	blv /= 100;
@@ -409,7 +601,7 @@ void FGenerateChunkMeshTask::CreateQuad(FVector tlv, FVector trv, FVector blv, F
 		blockStateMeshData->UV0.Append({
 		FVector2D{blv.X, blv.Y}, FVector2D{brv.X, brv.Y}, FVector2D{tlv.X, tlv.Y}, FVector2D{trv.X, trv.Y}
 			});
-		if(FMath::TruncToInt32(norm.Z) == 1)
+		if (FMath::TruncToInt32(norm.Z) == 1)
 		{
 			quadDirection = EDirections::Up;
 		}
@@ -432,7 +624,7 @@ void FGenerateChunkMeshTask::CreateQuad(FVector tlv, FVector trv, FVector blv, F
 		{
 			quadDirection = EDirections::Backward;
 		}
-	}	
+	}
 	else
 	{
 		blockStateMeshData->UV0.Append({
@@ -447,8 +639,27 @@ void FGenerateChunkMeshTask::CreateQuad(FVector tlv, FVector trv, FVector blv, F
 			quadDirection = EDirections::Left;
 		}
 	}
-	FColor textureIndex{ 0,0,0, static_cast<uint8>(BlockData::GetBlockTextureIndex(block.blockID, quadDirection))};
+	FColor textureIndex{ 0,0,0, static_cast<uint8>(BlockData::GetBlockTextureIndex(block.blockID, quadDirection)) };
 	blockStateMeshData->Colors.Append({ textureIndex, textureIndex, textureIndex, textureIndex });
-	
+
+};
+
+void FGenerateChunkMeshTask::CreateQuad(FVector tlv, FVector trv, FVector blv, FVector brv, FVector norm, const FFluidState& fluid)
+{
+	switch (fluid.fluidID)
+	{
+	case 1:
+		{
+		int32 nextIndex = fluidStateMeshData->Positions.Num();
+
+		fluidStateMeshData->Positions.Append({ tlv, trv, blv, brv });
+
+		fluidStateMeshData->Triangles.Append({ nextIndex + 1, nextIndex + 3, nextIndex, nextIndex + 2, nextIndex, nextIndex + 3 });
+
+		fluidStateMeshData->Normals.Append({ norm,norm,norm,norm });
+
+		}
+		break;
+	}
+
 }
-;

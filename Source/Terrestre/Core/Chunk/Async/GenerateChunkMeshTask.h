@@ -48,7 +48,7 @@ private:
 	
 	void GenerateBlockStateMesh();
 
-	void GenerateFluidStateMesh();
+	void GenerateWaterMesh();
 
 	bool IsVisibleFace(FIntVector localPos, EDirections direction);
 	
@@ -75,6 +75,7 @@ private:
 	*/
 	void CreateQuad(FVector tlv, FVector trv, FVector blv, FVector brv, FVector norm, const FBlockState& block);
 
+	void CreateQuad(FVector tlv, FVector trv, FVector blv, FVector brv, FVector norm, const FFluidState& fluid);
 
 	FORCEINLINE TStatId GetStatId() const { RETURN_QUICK_DECLARE_CYCLE_STAT(FGenerateChunkMeshTask, STATGROUP_ThreadPoolAsyncTasks); }
 	void ClearMeshData(FMeshData& meshdata)
