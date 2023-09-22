@@ -90,11 +90,13 @@ private:
 
 	std::atomic<bool> bMeshingTaskDone;
 
-	std::atomic<bool> bMeshCreated;
+	std::atomic<bool> bBlockMeshCreated;
 
 	std::atomic<bool> bMeshReady;
 
 	bool bMeshDirty;
+
+	bool bFluidMeshCreated;
 	
 	/* Get Chunk's block data stored in a form of indexed palette, the data is owned by chunk manager */
 	FBlockPalette* GetBlockPalette() const;
@@ -114,7 +116,9 @@ private:
 	UPROPERTY(Category = "Realtime Mesh", VisibleAnywhere, BlueprintReadOnly, meta = (ExposeFunctionCategories = "Mesh,Rendering,Physics,Components|StaticMesh", AllowPrivateAccess = "true"))
 	TObjectPtr<URealtimeMeshComponent> RealtimeMeshComponent;
 
-	FRealtimeMeshSectionKey meshSectionKey;
+	FRealtimeMeshSectionKey blockMeshSectionKey;
+
+	FRealtimeMeshSectionKey fluidMeshSectionKey;
 	
 	UPROPERTY()
 	URealtimeMeshSimple* realtimeMesh;
@@ -127,7 +131,7 @@ private:
 	UMaterialInterface* BlockMaterial;
 
 	UPROPERTY(EditAnywhere)
-	UMaterialInterface* FluidMaterial;
+	UMaterialInterface* WaterMaterial;
 	
 	UFUNCTION()		// * Always executes on the game thread
 	void ApplyMesh();

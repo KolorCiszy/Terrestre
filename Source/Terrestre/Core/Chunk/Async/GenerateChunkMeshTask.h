@@ -2,6 +2,8 @@
 #include "CoreMinimal.h"
 #include "Async/AsyncWork.h"
 #include "RealtimeMeshSimple.h"
+#include "Terrestre/Core/Chunk/Storage/BlockState.h"
+#include "Terrestre/Core/Chunk/Storage/FluidState.h"
 #include "Terrestre/Core/Chunk/Chunk.h"
 
 
@@ -10,7 +12,7 @@ enum class EDirections;
 using FMeshData = FRealtimeMeshSimpleMeshData;
 
 struct FChunkHelper;
-struct FBlockState;
+
 class FBlockPalette;
 class AChunk;
 
@@ -48,10 +50,12 @@ private:
 	
 	void GenerateBlockStateMesh();
 
-	void GenerateFluidStateMesh();
+	void GenerateWaterMesh();
 
 	bool IsVisibleFace(FIntVector localPos, EDirections direction);
 	
+	bool HasWater(FIntVector localPos, EDirections direction);
+
 	bool forwardChunkDataValid;
 	bool backwardChunkDataValid;
 	bool rightChunkDataValid;
@@ -66,6 +70,17 @@ private:
 	TArray<FBlockState, TInlineAllocator<AChunk::Volume>> uncompressedBlocksR{};
 	TArray<FBlockState, TInlineAllocator<AChunk::Volume>> uncompressedBlocksU{};
 	TArray<FBlockState, TInlineAllocator<AChunk::Volume>> uncompressedBlocksD{};
+
+	TArray<FFluidState, TInlineAllocator<AChunk::Volume>>* fluidStates;
+
+	TArray<FFluidState, TInlineAllocator<AChunk::Volume>>* fluidStatesU;
+	TArray<FFluidState, TInlineAllocator<AChunk::Volume>>* fluidStatesD;
+	TArray<FFluidState, TInlineAllocator<AChunk::Volume>>* fluidStatesL;
+	TArray<FFluidState, TInlineAllocator<AChunk::Volume>>* fluidStatesR;
+	TArray<FFluidState, TInlineAllocator<AChunk::Volume>>* fluidStatesF;
+	TArray<FFluidState, TInlineAllocator<AChunk::Volume>>* fluidStatesB;
+
+
 	/*
 	* tlv - top left vertex
 	* blv - bottom left vertex
@@ -75,6 +90,7 @@ private:
 	*/
 	void CreateQuad(FVector tlv, FVector trv, FVector blv, FVector brv, FVector norm, const FBlockState& block);
 
+	void CreateQuad(FVector tlv, FVector trv, FVector blv, FVector brv, FVector norm, const FFluidState& fluid);
 
 	FORCEINLINE TStatId GetStatId() const { RETURN_QUICK_DECLARE_CYCLE_STAT(FGenerateChunkMeshTask, STATGROUP_ThreadPoolAsyncTasks); }
 	void ClearMeshData(FMeshData& meshdata)

@@ -6,8 +6,7 @@
 #include "Terrestre/Core/Chunk/ChunkManager.h"
 #include "Terrestre/Core/Chunk/Misc/ChunkHelper.h"
 #include "Terrestre/Core/Chunk/ChunkUtilityLib.h"
-#include "Terrestre/Core/Chunk/Storage/BlockState.h"
-#include "Terrestre/Core/Chunk/Storage/FluidState.h"
+
 #include "Terrestre/Core/Chunk/Storage/BlockPalette.h"
 
 void FGenerateChunkMeshTask::ResetData()
@@ -27,6 +26,15 @@ void FGenerateChunkMeshTask::ResetData()
 	uncompressedBlocksR.Empty();
 	uncompressedBlocksU.Empty();
 	uncompressedBlocksD.Empty();
+
+	fluidStates = nullptr;
+
+	fluidStatesU = nullptr;
+	fluidStatesD = nullptr;
+	fluidStatesL = nullptr;
+	fluidStatesR = nullptr;
+	fluidStatesF = nullptr;
+	fluidStatesB = nullptr;
 }
 void FGenerateChunkMeshTask::GenerateBlockStateMesh()
 {
@@ -275,16 +283,233 @@ void FGenerateChunkMeshTask::GenerateBlockStateMesh()
 		}
 	}
 }
-void FGenerateChunkMeshTask::GenerateFluidStateMesh()
+void FGenerateChunkMeshTask::GenerateWaterMesh()
 {
-	TArray<FFluidState, TInlineAllocator<AChunk::Volume>>* fluidStates = chunk->GetFluidStates();
+	fluidStates = chunk->GetFluidStates();
+
+	if (auto upChunk = chunk->GetNeighbourChunk(EDirections::Up))
+	{
+		fluidStatesU = upChunk->GetFluidStates();
+	}
+	if (auto downChunk = chunk->GetNeighbourChunk(EDirections::Down))
+	{
+		fluidStatesD = downChunk->GetFluidStates();
+	}
+	if (auto leftChunk = chunk->GetNeighbourChunk(EDirections::Left))
+	{
+		fluidStatesL = leftChunk->GetFluidStates();
+	}
+	if (auto rightChunk = chunk->GetNeighbourChunk(EDirections::Right))
+	{
+		fluidStatesR = rightChunk->GetFluidStates();
+	}
+	if (auto forwardChunk = chunk->GetNeighbourChunk(EDirections::Forward))
+	{
+		fluidStatesF = forwardChunk->GetFluidStates();
+	}
+	if (auto backwardChunk = chunk->GetNeighbourChunk(EDirections::Backward))
+	{
+		fluidStatesB = backwardChunk->GetFluidStates();
+	}
+	
+	FChunkHelper chunkHelper;
+	chunkHelper.SetSize(AChunk::Volume);
+
 	for (int16 x{}; x < AChunk::Size; x++)
 	{
 		for (int16 y{}; y < AChunk::Size; y++)
 		{
 			for (int16 z{}; z < AChunk::Size; z++)
 			{
+				FIntVector currentPosition(x, y, z);
+				
+				int32 currentIndex{ UChunkUtilityLib::LocalBlockPosToIndex(currentPosition) };
+				/* Get Current block */
+				FFluidState& fluidState = *(fluidStates->GetData() + currentIndex);
 
+				if (fluidState.fluidID != 1)
+				{
+					continue;
+				}
+
+				int16 x1 = x + 1;
+				int16 z1 = z + 1;
+				int16 y1 = y + 1;
+				int16 runLength = 0;
+				/* Index of block that's being currently compared in the chunkHelper */
+				int32 compareFluidIndex = 0;
+				
+
+				// Left face (Y-)
+				if (!chunkHelper.visitedYN[currentIndex] && !HasWater(currentPosition, EDirections::Left) && IsVisibleFace(currentPosition, EDirections::Left))
+				{
+					// Search upwards to determine run length
+					for (int16 q = z; q < AChunk::Size; q++)
+					{
+						compareFluidIndex = UChunkUtilityLib::LocalBlockPosToIndex(FIntVector{ x,y,q });
+						if ((fluidStates->GetData() + compareFluidIndex)->fluidID == 1)
+						{
+							chunkHelper.visitedYN[compareFluidIndex] = true;
+							runLength++;
+						}
+						else
+						{
+							break;
+						}
+					}
+					if (runLength > 0)
+					{
+						// Create a quad and write it directly to the buffer
+						CreateQuad(FVector(x, y, z + runLength) * AChunk::VoxelSize,
+							FVector(x1, y, z + runLength) * AChunk::VoxelSize,
+							FVector(x, y, z) * AChunk::VoxelSize,
+							FVector(x1, y, z) * AChunk::VoxelSize,
+							FVector::LeftVector, fluidState);
+
+					}
+				}
+				runLength = 0;
+				if (!chunkHelper.visitedYP[currentIndex] && !HasWater(currentPosition, EDirections::Right) && IsVisibleFace(currentPosition, EDirections::Right))
+				{
+					// Search upwards to determine run length
+					for (int16 q = z; q < AChunk::Size; q++)
+					{
+						// Pre-calculate the array lookup as it is used twice
+						compareFluidIndex = UChunkUtilityLib::LocalBlockPosToIndex(FIntVector{ x,y,q });
+						if ((fluidStates->GetData() + compareFluidIndex)->fluidID == 1)
+						{
+							chunkHelper.visitedYP[compareFluidIndex] = true;
+							runLength++;
+						}
+						else
+						{
+							break;
+						}
+					}
+					if (runLength > 0)
+					{
+						CreateQuad(FVector(x1, y1, z + runLength) * AChunk::VoxelSize,
+							FVector(x, y1, z + runLength) * AChunk::VoxelSize,
+							FVector(x1, y1, z) * AChunk::VoxelSize,
+							FVector(x, y1, z) * AChunk::VoxelSize,
+							FVector::RightVector, fluidState);
+					}
+				}
+				runLength = 0;
+				//Forward (X+)
+				if (!chunkHelper.visitedXP[currentIndex] && !HasWater(currentPosition, EDirections::Forward) && IsVisibleFace(currentPosition, EDirections::Forward))
+				{
+					// Search upwards to determine run length
+					for (int16 q = z; q < AChunk::Size; q++)
+					{
+						compareFluidIndex = UChunkUtilityLib::LocalBlockPosToIndex(FIntVector{ x,y,q });
+						if ((fluidStates->GetData() + compareFluidIndex)->fluidID == 1)
+						{
+							chunkHelper.visitedXP[compareFluidIndex] = true;
+							runLength++;
+						}
+						else
+						{
+							break;
+						}
+					}
+					if (runLength > 0)
+					{
+						CreateQuad(FVector(x1, y, z + runLength) * AChunk::VoxelSize,
+							FVector(x1, y1, z + runLength) * AChunk::VoxelSize,
+							FVector(x1, y, z) * AChunk::VoxelSize,
+							FVector(x1, y1, z) * AChunk::VoxelSize,
+							FVector::ForwardVector, fluidState);
+
+					}
+				}
+				runLength = 0;
+				//Backward (X-)
+				if (!chunkHelper.visitedXN[currentIndex] && !HasWater(currentPosition, EDirections::Backward) && IsVisibleFace(currentPosition, EDirections::Backward))
+				{
+					// Search upwards to determine run length
+					for (int16 q = z; q < AChunk::Size; q++)
+					{
+						compareFluidIndex = UChunkUtilityLib::LocalBlockPosToIndex(FIntVector{ x,y,q });
+						if ((fluidStates->GetData() + compareFluidIndex)->fluidID == 1)
+						{
+							chunkHelper.visitedXN[compareFluidIndex] = true;
+							runLength++;
+						}
+						else
+						{
+							break;
+						}
+					}
+					if (runLength > 0)
+					{
+						CreateQuad(FVector(x, y1, runLength + z) * AChunk::VoxelSize,
+							FVector(x, y, z + runLength) * AChunk::VoxelSize,
+							FVector(x, y1, z) * AChunk::VoxelSize,
+							FVector(x, y, z) * AChunk::VoxelSize,
+							FVector::BackwardVector, fluidState);
+
+					}
+				}
+				runLength = 0;
+				//Up (Z+)
+				if (!chunkHelper.visitedZP[currentIndex] && !HasWater(currentPosition, EDirections::Up) && IsVisibleFace(currentPosition, EDirections::Up))
+				{
+					// Search forwards to determine run length
+					for (int16 q = x; q < AChunk::Size; q++)
+					{
+						compareFluidIndex = UChunkUtilityLib::LocalBlockPosToIndex(FIntVector{ q,y,z });
+						if ((fluidStates->GetData() + compareFluidIndex)->fluidID == 1)
+						{
+							chunkHelper.visitedZP[compareFluidIndex] = true;
+							runLength++;
+						}
+						else
+						{
+							break;
+						}
+					}
+					if (runLength > 0)
+					{
+						CreateQuad(FVector(x, y, z1) * AChunk::VoxelSize,
+							FVector(x, y1, z1) * AChunk::VoxelSize,
+							FVector(x + runLength, y, z1) * AChunk::VoxelSize, // bylo x + runlength
+							FVector(x + runLength, y1, z1) * AChunk::VoxelSize, // bylo x + runlength
+							FVector::UpVector, fluidState);
+
+					}
+				}
+				runLength = 0;
+				//Down (Z-)
+				if (!chunkHelper.visitedZN[currentIndex] && !HasWater(currentPosition, EDirections::Down) && IsVisibleFace(currentPosition, EDirections::Down))
+				{
+					// Search forwards to determine run length
+					for (int16 q = x; q < AChunk::Size; q++)
+					{
+						compareFluidIndex = UChunkUtilityLib::LocalBlockPosToIndex(FIntVector{ q,y,z });
+						if ((fluidStates->GetData() + compareFluidIndex)->fluidID == 1)
+						{
+							chunkHelper.visitedZN[compareFluidIndex] = true;
+							runLength++;
+						}
+						else
+						{
+							break;
+						}
+					}
+
+
+					if (runLength > 0)
+					{
+						CreateQuad(FVector(x + runLength, y, z) * AChunk::VoxelSize,
+							FVector(x + runLength, y1, z) * AChunk::VoxelSize,
+							FVector(x, y, z) * AChunk::VoxelSize,
+							FVector(x, y1, z) * AChunk::VoxelSize,
+							FVector::DownVector, fluidState);
+
+					}
+				}
+				runLength = 0;
 			}
 		}
 	}
@@ -294,11 +519,96 @@ void FGenerateChunkMeshTask::DoWork()
 {
 	GenerateBlockStateMesh();
 
-	GenerateFluidStateMesh();
+	GenerateWaterMesh();
 
 	chunk->MarkMeshReady();	
 }
+bool FGenerateChunkMeshTask::HasWater(FIntVector localPos, EDirections direction)
+{
+	switch (direction)
+	{
+	case EDirections::Forward: localPos.X++;
+		break;
+	case EDirections::Backward: localPos.X--;
+		break;
+	case EDirections::Right: localPos.Y++;
+		break;
+	case EDirections::Left: localPos.Y--;
+		break;
+	case EDirections::Up: localPos.Z++;
+		break;
+	case EDirections::Down: localPos.Z--;
+		break;
+	default: return true;
+	}
+	if (UChunkUtilityLib::IsValidLocalPosition(localPos))
+	{
+		int32 currentIndex{ UChunkUtilityLib::LocalBlockPosToIndex(localPos) };
+		if ((fluidStates->GetData() + currentIndex)->fluidID == 1)
+		{
+			return true;
+		}
+	}
+	else
+	{
+		if (localPos.X >= AChunk::Size && fluidStatesF)
+		{
+			localPos.X = 0;
+			int32 currentIndex{ UChunkUtilityLib::LocalBlockPosToIndex(localPos) };
+			if ((fluidStatesF->GetData() + currentIndex)->fluidID == 1)
+			{
+				return true;
+			}
+		}
+		else if (localPos.X < 0 && fluidStatesB)
+		{
+			localPos.X = AChunk::Size - 1;
+			int32 currentIndex{ UChunkUtilityLib::LocalBlockPosToIndex(localPos) };
+			if ((fluidStatesB->GetData() + currentIndex)->fluidID == 1)
+			{
+				return true;
+			}
+		}
+		else if (localPos.Y >= AChunk::Size && fluidStatesR)
+		{
+			localPos.Y = 0;
+			int32 currentIndex{ UChunkUtilityLib::LocalBlockPosToIndex(localPos) };
+			if ((fluidStatesR->GetData() + currentIndex)->fluidID == 1)
+			{
+				return true;
+			}
 
+		}
+		else if (localPos.Y < 0 && fluidStatesL)
+		{
+			localPos.Y = AChunk::Size - 1;
+			int32 currentIndex{ UChunkUtilityLib::LocalBlockPosToIndex(localPos) };
+			if ((fluidStatesL->GetData() + currentIndex)->fluidID == 1)
+			{
+				return true;
+			}
+		}
+		else if (localPos.Z >= AChunk::Size && fluidStatesU)
+		{
+			localPos.Z = 0;
+			int32 currentIndex{ UChunkUtilityLib::LocalBlockPosToIndex(localPos) };
+			if ((fluidStatesU->GetData() + currentIndex)->fluidID == 1)
+			{
+				return true;
+			}
+		}
+		else if (localPos.Z < 0 && fluidStatesD)
+		{
+			localPos.Z = AChunk::Size - 1;
+			int32 currentIndex{ UChunkUtilityLib::LocalBlockPosToIndex(localPos) };
+			if ((fluidStatesD->GetData() + currentIndex)->fluidID == 1)
+			{
+				return true;
+			}
+		}
+	}
+	return false;
+}
 bool FGenerateChunkMeshTask::IsVisibleFace(FIntVector localPos, EDirections direction)
 {
 	switch (direction)
@@ -387,17 +697,17 @@ bool FGenerateChunkMeshTask::IsVisibleFace(FIntVector localPos, EDirections dire
 }
 void FGenerateChunkMeshTask::CreateQuad(FVector tlv, FVector trv, FVector blv, FVector brv, FVector norm, const FBlockState& block)
 {
-	
-	if(BlockData::GetBlockMeshType(block.blockID) == EBlockMeshType::NONE)
+
+	if (BlockData::GetBlockMeshType(block.blockID) == EBlockMeshType::NONE)
 	{
 		return;
 	}
 	int32 nextIndex = blockStateMeshData->Positions.Num();
-	blockStateMeshData->Positions.Append({tlv, trv, blv, brv});
-	
-	blockStateMeshData->Triangles.Append({nextIndex + 1, nextIndex + 3, nextIndex, nextIndex + 2, nextIndex, nextIndex + 3});
+	blockStateMeshData->Positions.Append({ tlv, trv, blv, brv });
 
-	blockStateMeshData->Normals.Append({norm,norm,norm,norm});
+	blockStateMeshData->Triangles.Append({ nextIndex + 1, nextIndex + 3, nextIndex, nextIndex + 2, nextIndex, nextIndex + 3 });
+
+	blockStateMeshData->Normals.Append({ norm,norm,norm,norm });
 
 	tlv /= 100;
 	blv /= 100;
@@ -409,7 +719,7 @@ void FGenerateChunkMeshTask::CreateQuad(FVector tlv, FVector trv, FVector blv, F
 		blockStateMeshData->UV0.Append({
 		FVector2D{blv.X, blv.Y}, FVector2D{brv.X, brv.Y}, FVector2D{tlv.X, tlv.Y}, FVector2D{trv.X, trv.Y}
 			});
-		if(FMath::TruncToInt32(norm.Z) == 1)
+		if (FMath::TruncToInt32(norm.Z) == 1)
 		{
 			quadDirection = EDirections::Up;
 		}
@@ -432,7 +742,7 @@ void FGenerateChunkMeshTask::CreateQuad(FVector tlv, FVector trv, FVector blv, F
 		{
 			quadDirection = EDirections::Backward;
 		}
-	}	
+	}
 	else
 	{
 		blockStateMeshData->UV0.Append({
@@ -447,8 +757,76 @@ void FGenerateChunkMeshTask::CreateQuad(FVector tlv, FVector trv, FVector blv, F
 			quadDirection = EDirections::Left;
 		}
 	}
-	FColor textureIndex{ 0,0,0, static_cast<uint8>(BlockData::GetBlockTextureIndex(block.blockID, quadDirection))};
+	FColor textureIndex{ 0,0,0, static_cast<uint8>(BlockData::GetBlockTextureIndex(block.blockID, quadDirection)) };
 	blockStateMeshData->Colors.Append({ textureIndex, textureIndex, textureIndex, textureIndex });
+
+};
+
+void FGenerateChunkMeshTask::CreateQuad(FVector tlv, FVector trv, FVector blv, FVector brv, FVector norm, const FFluidState& fluid)
+{
+	switch (fluid.fluidID)
+	{
+	case 1:
+		{
+			int32 nextIndex = fluidStateMeshData->Positions.Num();
+
+			fluidStateMeshData->Positions.Append({ tlv, trv, blv, brv });
+
+			fluidStateMeshData->Triangles.Append({ nextIndex + 1, nextIndex + 3, nextIndex, nextIndex + 2, nextIndex, nextIndex + 3 });
+
+			fluidStateMeshData->Normals.Append({ norm,norm,norm,norm });
+
+			tlv /= 100;
+			blv /= 100;
+			brv /= 100;
+			trv /= 100;
+			EDirections quadDirection{};
+			if (norm == FVector::DownVector || norm == FVector::UpVector)
+			{
+				fluidStateMeshData->UV0.Append({
+				FVector2D{blv.X, blv.Y}, FVector2D{brv.X, brv.Y}, FVector2D{tlv.X, tlv.Y}, FVector2D{trv.X, trv.Y}
+					});
+				if (FMath::TruncToInt32(norm.Z) == 1)
+				{
+					quadDirection = EDirections::Up;
+				}
+				else
+				{
+					quadDirection = EDirections::Down;
+				}
+
+			}
+			else if (norm == FVector::ForwardVector || norm == FVector::BackwardVector)
+			{
+				fluidStateMeshData->UV0.Append({
+				FVector2D{blv.Y, blv.Z}, FVector2D{brv.Y, brv.Z}, FVector2D{tlv.Y, tlv.Z}, FVector2D{trv.Y, trv.Z}
+					});
+				if (FMath::TruncToInt32(norm.X) == 1)
+				{
+					quadDirection = EDirections::Forward;
+				}
+				else
+				{
+					quadDirection = EDirections::Backward;
+				}
+			}
+			else
+			{
+				fluidStateMeshData->UV0.Append({
+				FVector2D{blv.X, blv.Z}, FVector2D{brv.X, brv.Z}, FVector2D{tlv.X, tlv.Z}, FVector2D{trv.X, trv.Z}
+					});
+				if (FMath::TruncToInt32(norm.Y) == 1)
+				{
+					quadDirection = EDirections::Right;
+				}
+				else
+				{
+					quadDirection = EDirections::Left;
+				}
+			}
+		}
 	
+		break;
+	}
+
 }
-;

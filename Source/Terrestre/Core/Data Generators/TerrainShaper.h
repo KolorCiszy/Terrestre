@@ -21,7 +21,7 @@ public:
 	
 	UTerrainShaper();
 	virtual void BeginDestroy() override;
-	static inline float SEA_LEVEL = 0.0f;
+	static inline float SEA_LEVEL = 100.0f;
 	
 	static inline float const MAX_TERRAIN_HEIGHT = 100.f;
 	

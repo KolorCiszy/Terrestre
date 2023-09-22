@@ -25,7 +25,8 @@ AChunk::AChunk()
 	PrimaryActorTick.TickInterval = 1.0f;
 
 	bPendingDestroy = false;
-	bMeshCreated = false;
+	bBlockMeshCreated = false;
+	bFluidMeshCreated = false;
 	bReadyToDestroy = false;
 	bMeshDirty = false;
 	bMeshingTaskDone = false;
@@ -62,7 +63,7 @@ void AChunk::BeginPlay()
 #else
 	realtimeMesh = RealtimeMeshComponent->InitializeRealtimeMesh<URealtimeMeshSimple>();
 	realtimeMesh->SetupMaterialSlot(0, TEXT("BLOCK STATES MATERIAL"), BlockMaterial);
-	realtimeMesh->SetupMaterialSlot(1, TEXT("BLOCK STATES MATERIAL"), FluidMaterial);
+	realtimeMesh->SetupMaterialSlot(1, TEXT("WATER MATERIAL"), WaterMaterial);
 #endif
 	meshingTask = MakeUnique<FAsyncTask<FGenerateChunkMeshTask>>(this);
 	MarkMeshDirty();
@@ -105,11 +106,9 @@ void AChunk::ClearMeshSection(int32 sectionNum)
 #ifdef USE_PROCEDURAL_MESH
 	ProceduralMesh->ClearMeshSection(sectionNum);
 #else
-	if (bMeshCreated)
-	{
-		realtimeMesh->Reset(false);
-		bMeshCreated = false;
-	}
+	realtimeMesh->Reset(false);
+	bBlockMeshCreated = false;
+	bFluidMeshCreated = false;
 #endif
 }
 void AChunk::MarkMeshReady()
@@ -128,8 +127,8 @@ void AChunk::ApplyMesh()
 	if (meshingTask->IsDone())
 	{
 		bMeshingTaskDone = true;
-		FMeshData& meshData = *meshingTask->GetTask().blockStateMeshData;
-
+		FMeshData& blockMeshData = *meshingTask->GetTask().blockStateMeshData;
+		FMeshData& fluidMeshData = *meshingTask->GetTask().fluidStateMeshData;
 #ifdef USE_PROCEDURAL_MESH
 		if (meshData.Positions.Num() > 3)
 		{
@@ -143,27 +142,37 @@ void AChunk::ApplyMesh()
 			bMeshCreated.store(true);
 		}
 #else
-		if (meshData.Positions.Num() > 3) 
+		if (blockMeshData.Positions.Num() > 3)
 		{
-			if (!bMeshCreated)
+			if (!bBlockMeshCreated)
 			{
 				FRealtimeMeshSectionConfig config{ ERealtimeMeshSectionDrawType::Dynamic, 0 };
-				meshSectionKey = realtimeMesh->CreateMeshSection(0, config, meshData, true);
-				bMeshCreated = true;
+				blockMeshSectionKey = realtimeMesh->CreateMeshSection(0, config, blockMeshData, true);
+				bBlockMeshCreated = true;
 			}
 			else
 			{
-				realtimeMesh->UpdateSectionMesh(meshSectionKey, meshData);
-				if (!realtimeMesh->IsSectionVisible(meshSectionKey))
-				{
-					realtimeMesh->SetSectionVisibility(meshSectionKey, true);
-				}
+				realtimeMesh->UpdateSectionMesh(blockMeshSectionKey, blockMeshData);
+			}
+		} 
+
+		if (fluidMeshData.Positions.Num() > 3)
+		{
+			if (!bFluidMeshCreated)
+			{
+				FRealtimeMeshSectionConfig config{ ERealtimeMeshSectionDrawType::Dynamic, 1 };
+				config.bCastsShadow = false;
+				config.bForceOpaque = false;
+				
+				fluidMeshSectionKey = realtimeMesh->CreateMeshSection(0, config, fluidMeshData, false);
+				bFluidMeshCreated = true;
+			}
+			else
+			{
+				realtimeMesh->UpdateSectionMesh(fluidMeshSectionKey, fluidMeshData);
 			}
 		}
-		else
-		{
-			ClearMeshSection(0);
-		}
+		
 
 #endif
 		meshingTask->GetTask().ResetData();
