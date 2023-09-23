@@ -75,7 +75,7 @@ public:
 
 	FBlockPalette* GetChunkBlockPalette(FVector chunkLocation);
 
-	TArray<FFluidState, TInlineAllocator<AChunk::Volume>>* GetChunkFluidStates(FVector chunkLocation);
+	bool GetChunkFluidStates(FVector chunkLocation, TArray<FFluidState, TInlineAllocator<AChunk::Volume>>& fluidStates);
 	/* Thread safe */
 	bool BulkUnpackChunkBlocks(FVector chunkLocation, TArray<FBlockState, TInlineAllocator<AChunk::Volume>>& output);
 

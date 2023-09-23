@@ -285,10 +285,7 @@ void FGenerateChunkMeshTask::GenerateBlockStateMesh()
 }
 void FGenerateChunkMeshTask::GenerateWaterMesh()
 {
-
-
-	fluidStates = *chunk->GetFluidStates();
-
+	UChunkUtilityLib::GetChunkManager()->GetChunkFluidStates(chunk->GetActorLocation(), fluidStates);
 
 
 	FVector forwardChunkLocation = chunk->GetActorLocation() + FVector{ AChunk::SizeScaled.X, 0, 0 };
@@ -298,12 +295,13 @@ void FGenerateChunkMeshTask::GenerateWaterMesh()
 	FVector upChunkLocation = chunk->GetActorLocation() + FVector{ 0, 0, AChunk::SizeScaled.Z };
 	FVector downChunkLocation = chunk->GetActorLocation() - FVector{ 0,0, AChunk::SizeScaled.Z };
 
-	auto fluidStatesPtrF = UChunkUtilityLib::GetChunkManager()->GetChunkFluidStates(forwardChunkLocation);
-	auto fluidStatesPtrB = UChunkUtilityLib::GetChunkManager()->GetChunkFluidStates(backwardChunkLocation);
-	auto fluidStatesPtrR = UChunkUtilityLib::GetChunkManager()->GetChunkFluidStates(rightChunkLocation);
-	auto fluidStatesPtrL = UChunkUtilityLib::GetChunkManager()->GetChunkFluidStates(leftChunkLocation);
-	auto fluidStatesPtrU = UChunkUtilityLib::GetChunkManager()->GetChunkFluidStates(upChunkLocation);
-	auto fluidStatesPtrD = UChunkUtilityLib::GetChunkManager()->GetChunkFluidStates(downChunkLocation);
+	UChunkUtilityLib::GetChunkManager()->GetChunkFluidStates(forwardChunkLocation, fluidStatesF);
+	UChunkUtilityLib::GetChunkManager()->GetChunkFluidStates(backwardChunkLocation, fluidStatesB);
+	UChunkUtilityLib::GetChunkManager()->GetChunkFluidStates(rightChunkLocation, fluidStatesR);
+	UChunkUtilityLib::GetChunkManager()->GetChunkFluidStates(leftChunkLocation, fluidStatesL);
+	UChunkUtilityLib::GetChunkManager()->GetChunkFluidStates(upChunkLocation, fluidStatesU);
+	UChunkUtilityLib::GetChunkManager()->GetChunkFluidStates(downChunkLocation, fluidStatesD);
+	/*
 	if (fluidStatesPtrF)
 	{
 		fluidStatesF = *fluidStatesPtrF;
@@ -328,7 +326,9 @@ void FGenerateChunkMeshTask::GenerateWaterMesh()
 	{
 		fluidStatesD = *fluidStatesPtrD;
 	}
-
+	
+	
+	*/
 	FChunkHelper chunkHelper;
 	chunkHelper.SetSize(AChunk::Volume);
 

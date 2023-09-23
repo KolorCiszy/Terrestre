@@ -167,15 +167,16 @@ FBlockPalette* AChunkManager::GetChunkBlockPalette(FVector chunkLocation)
 	}
 	return nullptr;	
 }
-TArray<FFluidState, TInlineAllocator<AChunk::Volume>>* AChunkManager::GetChunkFluidStates(FVector chunkLocation)
+ bool AChunkManager::GetChunkFluidStates(FVector chunkLocation, TArray<FFluidState, TInlineAllocator<AChunk::Volume>>& fluidStates)
 {
 	FScopeLock lock(&mutex);
 	FChunkRegion* region = ActiveRegionsMap.Find(UChunkUtilityLib::GetRegionID(chunkLocation));
 	if (region)
 	{
-		return &region->ChunkData[chunkLocation].FluidStates;
+		fluidStates = region->ChunkData[chunkLocation].FluidStates;
+		return true;
 	}
-	return nullptr;
+	return false;
 }
 bool AChunkManager::BulkUnpackChunkBlocks(FVector chunkLocation, TArray<FBlockState, TInlineAllocator<AChunk::Volume>>& output)
 {

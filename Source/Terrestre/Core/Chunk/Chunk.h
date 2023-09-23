@@ -102,7 +102,7 @@ private:
 	FBlockPalette* GetBlockPalette() const;
 
 	/* Get Chunk's fluid data stored in an array, the data is owned by chunk manager */
-	TArray<FFluidState, TInlineAllocator<AChunk::Volume>>* GetFluidStates() const;
+	//TArray<FFluidState, TInlineAllocator<AChunk::Volume>>* GetFluidStates() const;
 
 	UFUNCTION()
 	void CreateMeshAsync();

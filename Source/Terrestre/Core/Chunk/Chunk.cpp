@@ -74,10 +74,7 @@ FBlockPalette* AChunk::GetBlockPalette() const
 	return UChunkUtilityLib::GetChunkManager()->GetChunkBlockPalette(this->GetActorLocation());
 
 }
-TArray<FFluidState, TInlineAllocator<AChunk::Volume>>* AChunk::GetFluidStates() const
-{
-	return UChunkUtilityLib::GetChunkManager()->GetChunkFluidStates(this->GetActorLocation());
-}
+
 
 
 
@@ -155,7 +152,7 @@ void AChunk::ApplyMesh()
 				realtimeMesh->UpdateSectionMesh(blockMeshSectionKey, blockMeshData);
 			}
 		}
-		else
+		else if(bBlockMeshCreated)
 		{
 			realtimeMesh->RemoveSection(blockMeshSectionKey);
 			bBlockMeshCreated = false;
@@ -177,15 +174,11 @@ void AChunk::ApplyMesh()
 				realtimeMesh->UpdateSectionMesh(fluidMeshSectionKey, fluidMeshData);
 			}
 		}
-
-		else
+		else if(bFluidMeshCreated)
 		{
 			realtimeMesh->RemoveSection(fluidMeshSectionKey);
 			bFluidMeshCreated = false;
 		}
-
-		
-
 
 #endif
 		meshingTask->GetTask().ResetData();
