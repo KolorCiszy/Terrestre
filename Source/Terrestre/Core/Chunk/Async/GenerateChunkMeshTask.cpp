@@ -27,14 +27,14 @@ void FGenerateChunkMeshTask::ResetData()
 	uncompressedBlocksU.Empty();
 	uncompressedBlocksD.Empty();
 
-	fluidStates = nullptr;
+	fluidStates.Empty(AChunk::Volume);
 
-	fluidStatesU = nullptr;
-	fluidStatesD = nullptr;
-	fluidStatesL = nullptr;
-	fluidStatesR = nullptr;
-	fluidStatesF = nullptr;
-	fluidStatesB = nullptr;
+	fluidStatesU.Empty(AChunk::Volume);
+	fluidStatesD.Empty(AChunk::Volume);
+	fluidStatesL.Empty(AChunk::Volume);
+	fluidStatesR.Empty(AChunk::Volume);
+	fluidStatesF.Empty(AChunk::Volume);
+	fluidStatesB.Empty(AChunk::Volume);
 }
 void FGenerateChunkMeshTask::GenerateBlockStateMesh()
 {
@@ -285,32 +285,48 @@ void FGenerateChunkMeshTask::GenerateBlockStateMesh()
 }
 void FGenerateChunkMeshTask::GenerateWaterMesh()
 {
-	fluidStates = chunk->GetFluidStates();
+	fluidStates = *chunk->GetFluidStates();
 
-	if (auto upChunk = chunk->GetNeighbourChunk(EDirections::Up))
+
+	FVector forwardChunkLocation = chunk->GetActorLocation() + FVector{ AChunk::SizeScaled.X, 0, 0 };
+	FVector backwardChunkLocation = chunk->GetActorLocation() - FVector{ AChunk::SizeScaled.X, 0 ,0 };
+	FVector rightChunkLocation = chunk->GetActorLocation() + FVector{ 0 , AChunk::SizeScaled.Y, 0 };
+	FVector leftChunkLocation = chunk->GetActorLocation() - FVector{ 0, AChunk::SizeScaled.Y, 0 };
+	FVector upChunkLocation = chunk->GetActorLocation() + FVector{ 0, 0, AChunk::SizeScaled.Z };
+	FVector downChunkLocation = chunk->GetActorLocation() - FVector{ 0,0, AChunk::SizeScaled.Z };
+
+	auto fluidStatesPtrF = UChunkUtilityLib::GetChunkManager()->GetChunkFluidStates(forwardChunkLocation);
+	auto fluidStatesPtrB = UChunkUtilityLib::GetChunkManager()->GetChunkFluidStates(backwardChunkLocation);
+	auto fluidStatesPtrR = UChunkUtilityLib::GetChunkManager()->GetChunkFluidStates(rightChunkLocation);
+	auto fluidStatesPtrL = UChunkUtilityLib::GetChunkManager()->GetChunkFluidStates(leftChunkLocation);
+	auto fluidStatesPtrU = UChunkUtilityLib::GetChunkManager()->GetChunkFluidStates(upChunkLocation);
+	auto fluidStatesPtrD = UChunkUtilityLib::GetChunkManager()->GetChunkFluidStates(downChunkLocation);
+	if (fluidStatesPtrF)
 	{
-		fluidStatesU = upChunk->GetFluidStates();
-	}
-	if (auto downChunk = chunk->GetNeighbourChunk(EDirections::Down))
+		fluidStatesF = *fluidStatesPtrF;
+	}	
+	if (fluidStatesPtrB)
 	{
-		fluidStatesD = downChunk->GetFluidStates();
-	}
-	if (auto leftChunk = chunk->GetNeighbourChunk(EDirections::Left))
+		fluidStatesB = *fluidStatesPtrB;
+	}	
+	if (fluidStatesPtrR)
 	{
-		fluidStatesL = leftChunk->GetFluidStates();
-	}
-	if (auto rightChunk = chunk->GetNeighbourChunk(EDirections::Right))
+		fluidStatesR = *fluidStatesPtrR;
+	}	
+	if (fluidStatesPtrL)
 	{
-		fluidStatesR = rightChunk->GetFluidStates();
-	}
-	if (auto forwardChunk = chunk->GetNeighbourChunk(EDirections::Forward))
+		fluidStatesL= *fluidStatesPtrL;
+	}	
+	if (fluidStatesPtrU)
 	{
-		fluidStatesF = forwardChunk->GetFluidStates();
+		fluidStatesU = *fluidStatesPtrU;
 	}
-	if (auto backwardChunk = chunk->GetNeighbourChunk(EDirections::Backward))
+	if (fluidStatesPtrD)
 	{
-		fluidStatesB = backwardChunk->GetFluidStates();
+		fluidStatesD = *fluidStatesPtrD;
 	}
+	
+	
 	
 	FChunkHelper chunkHelper;
 	chunkHelper.SetSize(AChunk::Volume);
@@ -325,7 +341,7 @@ void FGenerateChunkMeshTask::GenerateWaterMesh()
 				
 				int32 currentIndex{ UChunkUtilityLib::LocalBlockPosToIndex(currentPosition) };
 				/* Get Current block */
-				FFluidState& fluidState = *(fluidStates->GetData() + currentIndex);
+				FFluidState& fluidState = *(fluidStates.GetData() + currentIndex);
 
 				if (fluidState.fluidID != 1)
 				{
@@ -347,7 +363,7 @@ void FGenerateChunkMeshTask::GenerateWaterMesh()
 					for (int16 q = z; q < AChunk::Size; q++)
 					{
 						compareFluidIndex = UChunkUtilityLib::LocalBlockPosToIndex(FIntVector{ x,y,q });
-						if ((fluidStates->GetData() + compareFluidIndex)->fluidID == 1)
+						if ((fluidStates.GetData() + compareFluidIndex)->fluidID == 1)
 						{
 							chunkHelper.visitedYN[compareFluidIndex] = true;
 							runLength++;
@@ -376,7 +392,7 @@ void FGenerateChunkMeshTask::GenerateWaterMesh()
 					{
 						// Pre-calculate the array lookup as it is used twice
 						compareFluidIndex = UChunkUtilityLib::LocalBlockPosToIndex(FIntVector{ x,y,q });
-						if ((fluidStates->GetData() + compareFluidIndex)->fluidID == 1)
+						if ((fluidStates.GetData() + compareFluidIndex)->fluidID == 1)
 						{
 							chunkHelper.visitedYP[compareFluidIndex] = true;
 							runLength++;
@@ -403,7 +419,7 @@ void FGenerateChunkMeshTask::GenerateWaterMesh()
 					for (int16 q = z; q < AChunk::Size; q++)
 					{
 						compareFluidIndex = UChunkUtilityLib::LocalBlockPosToIndex(FIntVector{ x,y,q });
-						if ((fluidStates->GetData() + compareFluidIndex)->fluidID == 1)
+						if ((fluidStates.GetData() + compareFluidIndex)->fluidID == 1)
 						{
 							chunkHelper.visitedXP[compareFluidIndex] = true;
 							runLength++;
@@ -431,7 +447,7 @@ void FGenerateChunkMeshTask::GenerateWaterMesh()
 					for (int16 q = z; q < AChunk::Size; q++)
 					{
 						compareFluidIndex = UChunkUtilityLib::LocalBlockPosToIndex(FIntVector{ x,y,q });
-						if ((fluidStates->GetData() + compareFluidIndex)->fluidID == 1)
+						if ((fluidStates.GetData() + compareFluidIndex)->fluidID == 1)
 						{
 							chunkHelper.visitedXN[compareFluidIndex] = true;
 							runLength++;
@@ -459,7 +475,7 @@ void FGenerateChunkMeshTask::GenerateWaterMesh()
 					for (int16 q = x; q < AChunk::Size; q++)
 					{
 						compareFluidIndex = UChunkUtilityLib::LocalBlockPosToIndex(FIntVector{ q,y,z });
-						if ((fluidStates->GetData() + compareFluidIndex)->fluidID == 1)
+						if ((fluidStates.GetData() + compareFluidIndex)->fluidID == 1)
 						{
 							chunkHelper.visitedZP[compareFluidIndex] = true;
 							runLength++;
@@ -487,7 +503,7 @@ void FGenerateChunkMeshTask::GenerateWaterMesh()
 					for (int16 q = x; q < AChunk::Size; q++)
 					{
 						compareFluidIndex = UChunkUtilityLib::LocalBlockPosToIndex(FIntVector{ q,y,z });
-						if ((fluidStates->GetData() + compareFluidIndex)->fluidID == 1)
+						if ((fluidStates.GetData() + compareFluidIndex)->fluidID == 1)
 						{
 							chunkHelper.visitedZN[compareFluidIndex] = true;
 							runLength++;
@@ -544,64 +560,64 @@ bool FGenerateChunkMeshTask::HasWater(FIntVector localPos, EDirections direction
 	if (UChunkUtilityLib::IsValidLocalPosition(localPos))
 	{
 		int32 currentIndex{ UChunkUtilityLib::LocalBlockPosToIndex(localPos) };
-		if ((fluidStates->GetData() + currentIndex)->fluidID == 1)
+		if ((fluidStates.GetData() + currentIndex)->fluidID == 1)
 		{
 			return true;
 		}
 	}
 	else
 	{
-		if (localPos.X >= AChunk::Size && fluidStatesF)
+		if (localPos.X >= AChunk::Size && !fluidStatesF.IsEmpty())
 		{
 			localPos.X = 0;
 			int32 currentIndex{ UChunkUtilityLib::LocalBlockPosToIndex(localPos) };
-			if ((fluidStatesF->GetData() + currentIndex)->fluidID == 1)
+			if ((fluidStatesF.GetData() + currentIndex)->fluidID == 1)
 			{
 				return true;
 			}
 		}
-		else if (localPos.X < 0 && fluidStatesB)
+		else if (localPos.X < 0 && !fluidStatesB.IsEmpty())
 		{
 			localPos.X = AChunk::Size - 1;
 			int32 currentIndex{ UChunkUtilityLib::LocalBlockPosToIndex(localPos) };
-			if ((fluidStatesB->GetData() + currentIndex)->fluidID == 1)
+			if ((fluidStatesB.GetData() + currentIndex)->fluidID == 1)
 			{
 				return true;
 			}
 		}
-		else if (localPos.Y >= AChunk::Size && fluidStatesR)
+		else if (localPos.Y >= AChunk::Size && !fluidStatesR.IsEmpty())
 		{
 			localPos.Y = 0;
 			int32 currentIndex{ UChunkUtilityLib::LocalBlockPosToIndex(localPos) };
-			if ((fluidStatesR->GetData() + currentIndex)->fluidID == 1)
+			if ((fluidStatesR.GetData() + currentIndex)->fluidID == 1)
 			{
 				return true;
 			}
 
 		}
-		else if (localPos.Y < 0 && fluidStatesL)
+		else if (localPos.Y < 0 && !fluidStatesL.IsEmpty())
 		{
 			localPos.Y = AChunk::Size - 1;
 			int32 currentIndex{ UChunkUtilityLib::LocalBlockPosToIndex(localPos) };
-			if ((fluidStatesL->GetData() + currentIndex)->fluidID == 1)
+			if ((fluidStatesL.GetData() + currentIndex)->fluidID == 1)
 			{
 				return true;
 			}
 		}
-		else if (localPos.Z >= AChunk::Size && fluidStatesU)
+		else if (localPos.Z >= AChunk::Size && !fluidStatesU.IsEmpty())
 		{
 			localPos.Z = 0;
 			int32 currentIndex{ UChunkUtilityLib::LocalBlockPosToIndex(localPos) };
-			if ((fluidStatesU->GetData() + currentIndex)->fluidID == 1)
+			if ((fluidStatesU.GetData() + currentIndex)->fluidID == 1)
 			{
 				return true;
 			}
 		}
-		else if (localPos.Z < 0 && fluidStatesD)
+		else if (localPos.Z < 0 && !fluidStatesD.IsEmpty())
 		{
 			localPos.Z = AChunk::Size - 1;
 			int32 currentIndex{ UChunkUtilityLib::LocalBlockPosToIndex(localPos) };
-			if ((fluidStatesD->GetData() + currentIndex)->fluidID == 1)
+			if ((fluidStatesD.GetData() + currentIndex)->fluidID == 1)
 			{
 				return true;
 			}

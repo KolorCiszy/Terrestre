@@ -154,7 +154,12 @@ void AChunk::ApplyMesh()
 			{
 				realtimeMesh->UpdateSectionMesh(blockMeshSectionKey, blockMeshData);
 			}
-		} 
+		}
+		else
+		{
+			realtimeMesh->RemoveSection(blockMeshSectionKey);
+			bBlockMeshCreated = false;
+		}
 
 		if (fluidMeshData.Positions.Num() > 3)
 		{
@@ -172,7 +177,11 @@ void AChunk::ApplyMesh()
 				realtimeMesh->UpdateSectionMesh(fluidMeshSectionKey, fluidMeshData);
 			}
 		}
-		
+		else
+		{
+			realtimeMesh->RemoveSection(fluidMeshSectionKey);
+			bFluidMeshCreated = false;
+		}
 
 #endif
 		meshingTask->GetTask().ResetData();

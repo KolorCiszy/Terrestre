@@ -17,8 +17,6 @@ class FBlockPalette;
 class AChunk;
 
 
-
-
 class FGenerateChunkMeshTask : public FNonAbandonableTask
 {
 	friend class FAsyncTask<FGenerateChunkMeshTask>;
@@ -71,14 +69,14 @@ private:
 	TArray<FBlockState, TInlineAllocator<AChunk::Volume>> uncompressedBlocksU{};
 	TArray<FBlockState, TInlineAllocator<AChunk::Volume>> uncompressedBlocksD{};
 
-	TArray<FFluidState, TInlineAllocator<AChunk::Volume>>* fluidStates;
+	TArray<FFluidState, TInlineAllocator<AChunk::Volume>> fluidStates;
 
-	TArray<FFluidState, TInlineAllocator<AChunk::Volume>>* fluidStatesU;
-	TArray<FFluidState, TInlineAllocator<AChunk::Volume>>* fluidStatesD;
-	TArray<FFluidState, TInlineAllocator<AChunk::Volume>>* fluidStatesL;
-	TArray<FFluidState, TInlineAllocator<AChunk::Volume>>* fluidStatesR;
-	TArray<FFluidState, TInlineAllocator<AChunk::Volume>>* fluidStatesF;
-	TArray<FFluidState, TInlineAllocator<AChunk::Volume>>* fluidStatesB;
+	TArray<FFluidState, TInlineAllocator<AChunk::Volume>> fluidStatesU;
+	TArray<FFluidState, TInlineAllocator<AChunk::Volume>> fluidStatesD;
+	TArray<FFluidState, TInlineAllocator<AChunk::Volume>> fluidStatesL;
+	TArray<FFluidState, TInlineAllocator<AChunk::Volume>> fluidStatesR;
+	TArray<FFluidState, TInlineAllocator<AChunk::Volume>> fluidStatesF;
+	TArray<FFluidState, TInlineAllocator<AChunk::Volume>> fluidStatesB;
 
 
 	/*
@@ -100,6 +98,7 @@ private:
 		meshdata.Colors.Empty();
 		meshdata.Triangles.Empty();
 		meshdata.UV0.Empty();
+		meshdata.Normals.Empty();
 	}
 };
 
