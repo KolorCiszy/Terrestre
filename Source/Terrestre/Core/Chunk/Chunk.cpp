@@ -177,11 +177,15 @@ void AChunk::ApplyMesh()
 				realtimeMesh->UpdateSectionMesh(fluidMeshSectionKey, fluidMeshData);
 			}
 		}
+
 		else
 		{
 			realtimeMesh->RemoveSection(fluidMeshSectionKey);
 			bFluidMeshCreated = false;
 		}
+
+		
+
 
 #endif
 		meshingTask->GetTask().ResetData();
