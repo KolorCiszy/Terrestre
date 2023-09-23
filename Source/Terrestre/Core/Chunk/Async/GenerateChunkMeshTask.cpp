@@ -285,7 +285,11 @@ void FGenerateChunkMeshTask::GenerateBlockStateMesh()
 }
 void FGenerateChunkMeshTask::GenerateWaterMesh()
 {
+<<<<<<< HEAD
 	fluidStates = *chunk->GetFluidStates();
+=======
+	fluidStates = chunk->GetFluidStates();
+>>>>>>> 241864b8e645926b124f9ecea272a7e6f8c97152
 
 
 	FVector forwardChunkLocation = chunk->GetActorLocation() + FVector{ AChunk::SizeScaled.X, 0, 0 };
@@ -325,8 +329,11 @@ void FGenerateChunkMeshTask::GenerateWaterMesh()
 	{
 		fluidStatesD = *fluidStatesPtrD;
 	}
+<<<<<<< HEAD
 	
 	
+=======
+>>>>>>> 241864b8e645926b124f9ecea272a7e6f8c97152
 	
 	FChunkHelper chunkHelper;
 	chunkHelper.SetSize(AChunk::Volume);
