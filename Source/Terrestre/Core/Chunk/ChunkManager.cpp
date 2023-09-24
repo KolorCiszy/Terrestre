@@ -6,7 +6,7 @@
 #include "ChunkUtilityLib.h"
 #include "Kismet/GameplayStatics.h"
 #include "Terrestre/Core/Block/BlockData.h"
-#include "Terrestre/Core/Player/PlayerCharacter.h"
+#include "Terrestre/Core/Character/Player/PlayerCharacter.h"
 #include "Terrestre/Core/Gamemode/TerrestrePlayerState.h"
 #include "Terrestre/Core/Gamemode/TerrestreGameModeBase.h"
 #include "Terrestre/Core/Data Generators/TerrainShaper.h"
@@ -154,6 +154,18 @@ FBlockState AChunkManager::GetBlockAtWorldLocation(FVector worldLocation)
 		return region->ChunkData[chunkLocation].BlockPalette.GetBlockAtIndex(UChunkUtilityLib::LocalBlockPosToIndex(localBlockPos));
 	}
 	return FBlockState();
+
+}
+FFluidState AChunkManager::GetFluidAtWorldLocation(FVector worldLocation)
+{
+	FVector chunkLocation = UChunkUtilityLib::WorldLocationToChunkLocation(worldLocation);
+	FChunkRegion* region = ActiveRegionsMap.Find(UChunkUtilityLib::GetRegionID(chunkLocation));
+	if (region)
+	{
+		FIntVector localBlockPos = UChunkUtilityLib::WorldLocationToLocalBlockPos(worldLocation);
+		return region->ChunkData[chunkLocation].FluidStates[UChunkUtilityLib::LocalBlockPosToIndex(localBlockPos)];
+	}
+	return FFluidState();
 
 }
 

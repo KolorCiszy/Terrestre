@@ -657,6 +657,14 @@
 			"ChunkId": "f5f0253b6de08b5600000002"
 		},
 		{
+			"Path": "Engine/Content/Functions/Engine_MaterialFunctions02/ExampleContent/Textures/water_n.uasset",
+			"ChunkId": "b5b3fb3ab14561e700000001"
+		},
+		{
+			"Path": "Engine/Content/Functions/Engine_MaterialFunctions02/ExampleContent/Textures/water_n.ubulk",
+			"ChunkId": "b5b3fb3ab14561e700000002"
+		},
+		{
 			"Path": "Engine/Content/Functions/Engine_MaterialFunctions02/ObjectLocalBounds.uasset",
 			"ChunkId": "8d4486caf50605b200000001"
 		},
@@ -667,6 +675,10 @@
 		{
 			"Path": "Engine/Content/Functions/Engine_MaterialFunctions02/SafeNormalize.uasset",
 			"ChunkId": "b2e55f36209c19b000000001"
+		},
+		{
+			"Path": "Engine/Content/Functions/Engine_MaterialFunctions02/Utility/BlendAngleCorrectedNormals.uasset",
+			"ChunkId": "2f8460ae5086bffa00000001"
 		},
 		{
 			"Path": "Engine/Content/Functions/Engine_MaterialFunctions02/Utility/BreakOutFloat2Components.uasset",
@@ -683,6 +695,10 @@
 		{
 			"Path": "Engine/Content/Functions/Engine_MaterialFunctions02/Utility/MakeFloat2.uasset",
 			"ChunkId": "a29fb34f83f7d31a00000001"
+		},
+		{
+			"Path": "Engine/Content/Functions/Engine_MaterialFunctions02/Utility/MakeFloat3.uasset",
+			"ChunkId": "3f9ae4ae5e9a10b000000001"
 		},
 		{
 			"Path": "Engine/Content/Functions/Engine_MaterialFunctions02/Utility/VectorLength.uasset",
@@ -1385,6 +1401,10 @@
 			"ChunkId": "4656c1668f5a0a9600000001"
 		},
 		{
+			"Path": "Terrestre/Content/Core/Dimensions/PrimusMundus_BuiltData.uasset",
+			"ChunkId": "3ca2c6991787f44200000001"
+		},
+		{
 			"Path": "Terrestre/Content/Core/Gamemode/TerrestreGameMode_BP.uasset",
 			"ChunkId": "be9db5a5c4727a4000000001"
 		},
@@ -1451,6 +1471,14 @@
 		{
 			"Path": "Terrestre/Content/Core/World/Materials/Terrain/Terrain_M.uasset",
 			"ChunkId": "0635dd77e461a24700000001"
+		},
+		{
+			"Path": "Terrestre/Content/Core/World/Materials/Terrain/Water_M.uasset",
+			"ChunkId": "1e9fdd1732bb2daa00000001"
+		},
+		{
+			"Path": "Terrestre/Content/Core/World/Materials/Terrain/Water_MI.uasset",
+			"ChunkId": "c221c8ddb87acdca00000001"
 		},
 		{
 			"Path": "Terrestre/Content/Core/World/Textures/Terrain/basalt_smooth.uasset",
@@ -2899,6 +2927,15 @@
 			]
 		},
 		{
+			"Name": "/Engine/Functions/Engine_MaterialFunctions02/ExampleContent/Textures/water_n",
+			"ExportBundleChunkIds": [
+				"b5b3fb3ab14561e700000001"
+			],
+			"BulkDataChunkIds": [
+				"b5b3fb3ab14561e700000002"
+			]
+		},
+		{
 			"Name": "/Engine/Functions/Engine_MaterialFunctions02/ObjectLocalBounds",
 			"ExportBundleChunkIds": [
 				"8d4486caf50605b200000001"
@@ -2914,6 +2951,12 @@
 			"Name": "/Engine/Functions/Engine_MaterialFunctions02/SafeNormalize",
 			"ExportBundleChunkIds": [
 				"b2e55f36209c19b000000001"
+			]
+		},
+		{
+			"Name": "/Engine/Functions/Engine_MaterialFunctions02/Utility/BlendAngleCorrectedNormals",
+			"ExportBundleChunkIds": [
+				"2f8460ae5086bffa00000001"
 			]
 		},
 		{
@@ -2938,6 +2981,12 @@
 			"Name": "/Engine/Functions/Engine_MaterialFunctions02/Utility/MakeFloat2",
 			"ExportBundleChunkIds": [
 				"a29fb34f83f7d31a00000001"
+			]
+		},
+		{
+			"Name": "/Engine/Functions/Engine_MaterialFunctions02/Utility/MakeFloat3",
+			"ExportBundleChunkIds": [
+				"3f9ae4ae5e9a10b000000001"
 			]
 		},
 		{
@@ -3121,6 +3170,12 @@
 			]
 		},
 		{
+			"Name": "/Game/Core/Dimensions/PrimusMundus_BuiltData",
+			"ExportBundleChunkIds": [
+				"3ca2c6991787f44200000001"
+			]
+		},
+		{
 			"Name": "/Game/Core/Gamemode/DefaultGameMode_BP"
 		},
 		{
@@ -3220,9 +3275,24 @@
 			]
 		},
 		{
+			"Name": "/Game/Core/World/Materials/Terrain/Fluids_M"
+		},
+		{
 			"Name": "/Game/Core/World/Materials/Terrain/Terrain_M",
 			"ExportBundleChunkIds": [
 				"0635dd77e461a24700000001"
+			]
+		},
+		{
+			"Name": "/Game/Core/World/Materials/Terrain/Water_M",
+			"ExportBundleChunkIds": [
+				"1e9fdd1732bb2daa00000001"
+			]
+		},
+		{
+			"Name": "/Game/Core/World/Materials/Terrain/Water_MI",
+			"ExportBundleChunkIds": [
+				"c221c8ddb87acdca00000001"
 			]
 		},
 		{

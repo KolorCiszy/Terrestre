@@ -29,43 +29,43 @@ struct FBlockData : public FTableRowBase
 
 	/* Diplay name of a block*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Block data")
-	FName DisplayName;
+	FName DisplayName = TEXT("NONE");
 
 	/* True if block has different textures on its sides, e.g. grass, if false, the UP index is used */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Block data")
-	bool bHasSingleTexture;
+	bool bHasSingleTexture = true;
 
 	/* Index of texture in Terrain texture array */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Block data")
-	int32 TextureIndexUP;
+	int32 TextureIndexUP = 0;
 
 	/* Index of texture in Terrain texture array */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Block data", 
 				meta = (EditCondition = "bHasSingleTexture == false", EditConditionHides))
-	int32 TextureIndexDOWN;
+	int32 TextureIndexDOWN = 0;
 
 	/* Index of texture in Terrain texture array */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Block data",
 				meta = (EditCondition = "bHasSingleTexture == false", EditConditionHides))
-	int32 TextureIndexLEFT;
+	int32 TextureIndexLEFT = 0;
 
 	/* Index of texture in Terrain texture array */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Block data",
 				meta = (EditCondition = "bHasSingleTexture == false", EditConditionHides))
-	int32 TextureIndexRIGHT;
+	int32 TextureIndexRIGHT = 0;
 
 	/* Index of texture in Terrain texture array */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Block data",
 				meta = (EditCondition = "bHasSingleTexture == false", EditConditionHides))
-	int32 TextureIndexFORWARD;
+	int32 TextureIndexFORWARD = 0;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Block data",
 				meta = (EditCondition = "bHasSingleTexture == false", EditConditionHides))
-	int32 TextureIndexBACKWARD;
+	int32 TextureIndexBACKWARD = 0;
 
 	/* Index of texture in Terrain texture array */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Block data")
-	EBlockMeshType MeshType;
+	EBlockMeshType MeshType = EBlockMeshType::NONE;
 };
 
 enum class EDirections;

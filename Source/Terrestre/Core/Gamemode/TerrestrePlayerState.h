@@ -5,7 +5,7 @@
 #include "TerrestrePlayerState.generated.h"
 
 struct FPlayerData;
-UCLASS()
+UCLASS(Config=Game)
 class ATerrestrePlayerState : public APlayerState
 {
 	GENERATED_BODY()

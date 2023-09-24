@@ -8,7 +8,7 @@
 #include "GameFramework/Actor.h"
 #include "Storage/ChunkRegion.h"
 #include "Terrestre/Core/Data Generators/FastNoiseSettings.h"
-#include "Terrestre/Core/Player/PlayerCharacter.h"
+#include "Terrestre/Core/Character/Player/PlayerCharacter.h"
 #include "ChunkManager.generated.h"
 
 class AChunk;
@@ -70,6 +70,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Chunk manager")
 	FBlockState GetBlockAtWorldLocation(FVector worldLocation);
 
+	UFUNCTION(BlueprintCallable, Category = "Chunk manager")
+	FFluidState GetFluidAtWorldLocation(FVector worldLocation);
 	/* Passed location has to be the exact location of a chunk, which is faster than finding by world location */
 	AChunk* GetChunkAtLocation(FVector location);
 

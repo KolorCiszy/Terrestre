@@ -38,10 +38,7 @@ void FGenerateChunkMeshTask::ResetData()
 }
 void FGenerateChunkMeshTask::GenerateBlockStateMesh()
 {
-	if (chunk->IsEmpty())
-	{
-		return;
-	}
+
 
 	FChunkHelper chunkHelper;
 	chunkHelper.SetSize(AChunk::Volume);
@@ -82,6 +79,12 @@ void FGenerateChunkMeshTask::GenerateBlockStateMesh()
 	};
 
 	UChunkUtilityLib::GetChunkManager()->BulkUnpackChunkBlocks(chunk->GetActorLocation(), uncompressedBlocks);
+
+
+	if (chunk->IsEmpty())
+	{
+		return;
+	}
 
 	/* Iterate over chunk's blocks */
 	for (int16 x{}; x < AChunk::Size; x++)

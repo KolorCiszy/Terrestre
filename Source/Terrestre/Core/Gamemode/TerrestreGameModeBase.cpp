@@ -3,7 +3,7 @@
 
 #include "TerrestreGameModeBase.h"
 #include "Terrestre/Core/Gamemode/TerrestrePlayerState.h"
-#include "Terrestre/Core/Player/PlayerCharacter.h"
+#include "Terrestre/Core/Character/Player/PlayerCharacter.h"
 #include "Terrestre/Core/Subsystems/GameSavingSubsystem.h"
 
 ATerrestreGameModeBase::ATerrestreGameModeBase()

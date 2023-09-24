@@ -30,4 +30,10 @@ struct FFastNoiseSettings
 		EFastNoise_CellularDistanceFunction celDistFunc = EFastNoise_CellularDistanceFunction::Euclidean;
 	UPROPERTY(EditAnywhere)
 		EFastNoise_CellularReturnType celReturnType = EFastNoise_CellularReturnType::CellValue;
+
+	FFastNoiseSettings() : type{ EFastNoise_NoiseType::Perlin }, seed{ 6969 }, frequency{ 0.01f },
+		interpolation{ EFastNoise_Interp::Quintic }, fractalType{ EFastNoise_FractalType::FBM }, octaves{ 3 },
+		lacunarity{ 2.0f }, gain{ 0.5f }, cellularJitter{ 0.45f },
+		celDistFunc{ EFastNoise_CellularDistanceFunction::Euclidean }, celReturnType( EFastNoise_CellularReturnType::CellValue) {}
+
 };

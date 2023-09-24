@@ -1,7 +1,7 @@
 Terrestre/Binaries/Win64/D3D12/D3D12Core.dll	2023-05-21T15:02:34.220Z
 Terrestre/Binaries/Win64/D3D12/d3d12SDKLayers.dll	2023-05-21T15:02:34.457Z
 Terrestre/Binaries/Win64/OpenImageDenoise.dll	2023-05-21T15:11:49.004Z
-Terrestre/Binaries/Win64/Terrestre.exe	2023-09-21T07:56:37.052Z
+Terrestre/Binaries/Win64/Terrestre.exe	2023-09-23T16:40:22.187Z
 Terrestre/Binaries/Win64/boost_atomic-mt-x64.dll	2023-05-21T15:11:42.313Z
 Terrestre/Binaries/Win64/boost_chrono-mt-x64.dll	2023-05-21T15:11:42.314Z
 Terrestre/Binaries/Win64/boost_filesystem-mt-x64.dll	2023-05-21T15:11:42.315Z
@@ -22,4 +22,4 @@ Engine/Binaries/ThirdParty/Vorbis/Win64/VS2015/libvorbis_64.dll	2023-05-21T15:02
 Engine/Binaries/ThirdParty/Vorbis/Win64/VS2015/libvorbisfile_64.dll	2023-05-21T15:02:34.203Z
 Engine/Binaries/ThirdParty/Windows/WinPixEventRuntime/x64/WinPixEventRuntime.dll	2023-05-21T15:02:34.499Z
 Engine/Binaries/ThirdParty/Windows/XAudio2_9/x64/xaudio2_9redist.dll	2023-05-21T15:02:34.502Z
-Terrestre.exe	2023-09-21T07:57:15.779Z
+Terrestre.exe	2023-09-23T17:18:23.504Z

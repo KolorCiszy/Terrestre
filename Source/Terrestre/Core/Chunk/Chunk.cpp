@@ -7,7 +7,7 @@
 #include "ChunkManager.h"
 #include "Misc/Directions.h"
 #include "ProceduralMeshComponent.h"
-#include "Terrestre/Core/Player/PlayerCharacter.h"
+#include "Terrestre/Core/Character/BaseCharacter.h"
 #include "Terrestre/Core/Block/BlockData.h"
 #include "Async/GenerateChunkMeshTask.h"
 #include "RealtimeMeshComponent.h"
@@ -31,13 +31,6 @@ AChunk::AChunk()
 	bMeshDirty = false;
 	bMeshingTaskDone = false;
 
-	
-#ifdef USE_PROCEDURAL_MESH
-	ProceduralMesh = CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("ProceduralMesh"));
-	SetRootComponent(ProceduralMesh);
-	ProceduralMesh->SetCollisionProfileName(UCollisionProfile::BlockAll_ProfileName);
-#else
-
 	RealtimeMeshComponent = CreateDefaultSubobject<URealtimeMeshComponent>(TEXT("RealtimeMeshComponent"));
 	RealtimeMeshComponent->SetMobility(EComponentMobility::Movable);
 	RealtimeMeshComponent->SetGenerateOverlapEvents(false);
@@ -45,9 +38,6 @@ AChunk::AChunk()
 
 	SetRootComponent(RealtimeMeshComponent);
 
-	//RealtimeMeshComponent->CollisionType = ECollisionTraceFlag::CTF_UseDefault;
-#endif
-	
 }
 
 
@@ -57,14 +47,10 @@ void AChunk::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	
-#ifdef USE_PROCEDURAL_MESH
-	ProceduralMesh->SetMaterial(0, primaryMaterial);
-#else
 	realtimeMesh = RealtimeMeshComponent->InitializeRealtimeMesh<URealtimeMeshSimple>();
 	realtimeMesh->SetupMaterialSlot(0, TEXT("BLOCK STATES MATERIAL"), BlockMaterial);
 	realtimeMesh->SetupMaterialSlot(1, TEXT("WATER MATERIAL"), WaterMaterial);
-#endif
+
 	meshingTask = MakeUnique<FAsyncTask<FGenerateChunkMeshTask>>(this);
 	MarkMeshDirty();
 }
@@ -72,11 +58,7 @@ void AChunk::BeginPlay()
 FBlockPalette* AChunk::GetBlockPalette() const
 {
 	return UChunkUtilityLib::GetChunkManager()->GetChunkBlockPalette(this->GetActorLocation());
-
 }
-
-
-
 
 
 // Called every frame
@@ -84,6 +66,7 @@ void AChunk::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 }
+
 void AChunk::CreateMeshAsync()
 {
 	if(meshingTask && bMeshDirty && meshingTask->IsDone())
@@ -100,13 +83,9 @@ void AChunk::CreateMeshAsync()
 
 void AChunk::ClearMeshSection(int32 sectionNum)
 {
-#ifdef USE_PROCEDURAL_MESH
-	ProceduralMesh->ClearMeshSection(sectionNum);
-#else
 	realtimeMesh->Reset(false);
 	bBlockMeshCreated = false;
 	bFluidMeshCreated = false;
-#endif
 }
 void AChunk::MarkMeshReady()
 {
@@ -119,6 +98,7 @@ void AChunk::MarkMeshReady()
 			UChunkUtilityLib::GetChunkManager()->OnRebuildChunkMeshes.RemoveDynamic(this, &AChunk::CreateMeshAsync);
 		});
 }
+
 void AChunk::ApplyMesh()
 {
 	if (meshingTask->IsDone())
@@ -126,19 +106,7 @@ void AChunk::ApplyMesh()
 		bMeshingTaskDone = true;
 		FMeshData& blockMeshData = *meshingTask->GetTask().blockStateMeshData;
 		FMeshData& fluidMeshData = *meshingTask->GetTask().fluidStateMeshData;
-#ifdef USE_PROCEDURAL_MESH
-		if (meshData.Positions.Num() > 3)
-		{
-			ProceduralMesh->CreateMeshSection(0,
-				meshData.Positions,
-				meshData.Triangles,
-				meshData.Normals,
-				meshData.UV0,
-				meshData.Colors,
-				TArray<FProcMeshTangent>{}, true);
-			bMeshCreated.store(true);
-		}
-#else
+
 		if (blockMeshData.Positions.Num() > 3)
 		{
 			if (!bBlockMeshCreated)
@@ -180,7 +148,6 @@ void AChunk::ApplyMesh()
 			bFluidMeshCreated = false;
 		}
 
-#endif
 		meshingTask->GetTask().ResetData();
 		bMeshDirty = false;
 		UChunkUtilityLib::GetChunkManager()->OnApplyChunkMeshes.RemoveDynamic(this, &AChunk::ApplyMesh);
@@ -346,11 +313,9 @@ FName AChunk::OnVisibleByCharacter_Implementation(ACharacter* visibleBy, const F
 
 bool AChunk::OnLeftMouseButton_Implementation(ACharacter* clickedBy, const FHitResult& traceResult, int64 heldItemID)
 {
-	if(TObjectPtr<APlayerCharacter> player = Cast<APlayerCharacter>(clickedBy))
+	if (clickedBy->ActorHasTag("Player"))
 	{
-		
 		ModifyBlockAtLocalPosition(UChunkUtilityLib::WorldLocationToLocalBlockPos(traceResult.ImpactPoint - traceResult.ImpactNormal), FBlockState());
-		
 		return true;
 	}
 	return false;

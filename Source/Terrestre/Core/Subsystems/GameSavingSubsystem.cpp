@@ -1,6 +1,6 @@
 #include "GameSavingSubsystem.h"
 #include "Terrestre/Core/Gamemode/TerrestrePlayerState.h"
-#include "Terrestre/Core/Player/PlayerData.h"
+#include "Terrestre/Core/Character/Player/PlayerData.h"
 #include "Serialization/BufferArchive.h"
 
 void UGameSavingSubsystem::Initialize(FSubsystemCollectionBase& Collection)
