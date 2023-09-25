@@ -7,7 +7,7 @@
 #include "InteractableActor.generated.h"
 
 
-class ACharacter;
+class ABaseCharacter;
 
 /*
 USTRUCT(BlueprintType)
@@ -39,9 +39,9 @@ class TERRESTRE_API IInteractableActor
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Interactable Actor")
-	bool OnLeftMouseButton(ACharacter* clickedBy, const FHitResult& traceResult, int64 heldItemID);
+	bool OnLeftMouseButton(ABaseCharacter* clickedBy, const FHitResult& traceResult, int64 heldItemID);
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Interactable Actor")
-	bool OnRightMouseButton(ACharacter* clickedBy, const FHitResult& traceResult, int64 heldItemID);
+	bool OnRightMouseButton(ABaseCharacter* clickedBy, const FHitResult& traceResult, int64 heldItemID);
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Interactable Actor")
-	FName OnVisibleByCharacter(ACharacter* visibleBy, const FHitResult& traceResult);
+	FName OnVisibleByCharacter(ABaseCharacter* visibleBy, const FHitResult& traceResult);
 };

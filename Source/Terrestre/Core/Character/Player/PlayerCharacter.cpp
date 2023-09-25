@@ -150,21 +150,31 @@ void APlayerCharacter::Look(const FInputActionValue& Value)
 void APlayerCharacter::Jump()
 {
     Super::Jump();
-    if (GetCharacterMovement()->IsFlying())
+    switch (GetCharacterMovement()->MovementMode)
     {
-        AddMovementInput(FVector::UpVector, 200.0f, 0);
+        case MOVE_Flying: AddMovementInput(FVector::UpVector, 200.0f, 0);
+            break;
+        case MOVE_Swimming: AddMovementInput(FVector::UpVector, 100.0f, 0);
+            break;
     }
+   
 }
 void APlayerCharacter::Crouch()
 {
-    if(GetCharacterMovement()->IsFlying())
+    switch (GetCharacterMovement()->MovementMode)
     {
-        AddMovementInput(FVector::DownVector, 200.0f, 0);
+    case MOVE_Flying: AddMovementInput(FVector::UpVector, 200.0f, 0);
+        break;
+    case MOVE_Swimming: AddMovementInput(FVector::UpVector, 100.0f, 0);
+        break;
+    case MOVE_Walking:  
+        if (CanCrouch())
+        {
+            Super::Crouch();
+        }
+        break;
     }
-    if(CanCrouch())
-    {
-        Super::Crouch();
-    }
+   
 }
 void APlayerCharacter::UnCrouch()
 {

@@ -75,11 +75,11 @@ protected:
 
 	inline void MarkPendingDestroy();
 
-	virtual FName OnVisibleByCharacter_Implementation(ACharacter* visibleBy, const FHitResult& traceResult) override;
+	virtual FName OnVisibleByCharacter_Implementation(ABaseCharacter* visibleBy, const FHitResult& traceResult) override;
 
-	virtual bool OnLeftMouseButton_Implementation(ACharacter* clickedBy, const FHitResult& traceResult, int64 heldItemID) override;
+	virtual bool OnLeftMouseButton_Implementation(ABaseCharacter* clickedBy, const FHitResult& traceResult, int64 heldItemID) override;
 	
-	virtual bool OnRightMouseButton_Implementation(ACharacter* clickedBy, const FHitResult& traceResult, int64 heldItemID) override;
+	virtual bool OnRightMouseButton_Implementation(ABaseCharacter* clickedBy, const FHitResult& traceResult, int64 heldItemID) override;
 private:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -111,7 +111,7 @@ private:
 
 	void CancelMeshingTask();
 
-	TUniquePtr<FAsyncTask<FGenerateChunkMeshTask>> meshingTask;
+	FAsyncTask<FGenerateChunkMeshTask>* meshingTask;
 
 	UPROPERTY(Category = "Realtime Mesh", VisibleAnywhere, BlueprintReadOnly, meta = (ExposeFunctionCategories = "Mesh,Rendering,Physics,Components|StaticMesh", AllowPrivateAccess = "true"))
 	TObjectPtr<URealtimeMeshComponent> RealtimeMeshComponent;

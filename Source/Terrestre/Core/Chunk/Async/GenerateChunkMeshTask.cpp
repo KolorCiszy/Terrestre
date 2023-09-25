@@ -850,3 +850,4 @@ void FGenerateChunkMeshTask::CreateQuad(FVector tlv, FVector trv, FVector blv, F
 	}
 
 }
+FGenerateChunkMeshTask::~FGenerateChunkMeshTask() = default;

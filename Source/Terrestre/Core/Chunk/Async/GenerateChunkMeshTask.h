@@ -1,6 +1,5 @@
 #pragma once
 #include "CoreMinimal.h"
-#include "Async/AsyncWork.h"
 #include "RealtimeMeshSimple.h"
 #include "Terrestre/Core/Chunk/Storage/BlockState.h"
 #include "Terrestre/Core/Chunk/Storage/FluidState.h"
@@ -14,7 +13,6 @@ using FMeshData = FRealtimeMeshSimpleMeshData;
 struct FChunkHelper;
 
 class FBlockPalette;
-class AChunk;
 
 
 class FGenerateChunkMeshTask : public FNonAbandonableTask
@@ -22,7 +20,8 @@ class FGenerateChunkMeshTask : public FNonAbandonableTask
 	friend class FAsyncTask<FGenerateChunkMeshTask>;
 
 public: 
-	FGenerateChunkMeshTask() = delete;
+	FGenerateChunkMeshTask();
+	~FGenerateChunkMeshTask();
 	FGenerateChunkMeshTask(TObjectPtr<AChunk> chunkOwner)
 	{
 		chunk = chunkOwner;

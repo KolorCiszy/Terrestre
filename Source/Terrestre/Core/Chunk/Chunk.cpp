@@ -51,7 +51,7 @@ void AChunk::BeginPlay()
 	realtimeMesh->SetupMaterialSlot(0, TEXT("BLOCK STATES MATERIAL"), BlockMaterial);
 	realtimeMesh->SetupMaterialSlot(1, TEXT("WATER MATERIAL"), WaterMaterial);
 
-	meshingTask = MakeUnique<FAsyncTask<FGenerateChunkMeshTask>>(this);
+	meshingTask = new FAsyncTask<FGenerateChunkMeshTask>(this);
 	MarkMeshDirty();
 }
 
@@ -294,6 +294,7 @@ void AChunk::MarkPendingDestroy()
 void AChunk::EndPlay(EEndPlayReason::Type reason)
 {
 	MarkPendingDestroy();
+	delete meshingTask;
 }
 
 bool AChunk::IsInsideBounds(FVector inWorldLocation)
@@ -303,7 +304,7 @@ bool AChunk::IsInsideBounds(FVector inWorldLocation)
 	return Box.IsInside(inWorldLocation);
 }
 
-FName AChunk::OnVisibleByCharacter_Implementation(ACharacter* visibleBy, const FHitResult& traceResult)
+FName AChunk::OnVisibleByCharacter_Implementation(ABaseCharacter* visibleBy, const FHitResult& traceResult)
 {
 	//GEngine->AddOnScreenDebugMessage(0, 0.5f, FColor::Cyan, TEXT("lalala"), true);
 	FVector traceLocation = traceResult.ImpactPoint - traceResult.ImpactNormal;
@@ -311,9 +312,9 @@ FName AChunk::OnVisibleByCharacter_Implementation(ACharacter* visibleBy, const F
 	return BlockData::GetBlockDisplayName(blockID);
 }
 
-bool AChunk::OnLeftMouseButton_Implementation(ACharacter* clickedBy, const FHitResult& traceResult, int64 heldItemID)
+bool AChunk::OnLeftMouseButton_Implementation(ABaseCharacter* clickedBy, const FHitResult& traceResult, int64 heldItemID)
 {
-	if (clickedBy->ActorHasTag("Player"))
+	if (clickedBy->GetCharacterGameplayTags().HasTag(UGameplayTagsManager::Get().RequestGameplayTag(TEXT("Player"))))
 	{
 		ModifyBlockAtLocalPosition(UChunkUtilityLib::WorldLocationToLocalBlockPos(traceResult.ImpactPoint - traceResult.ImpactNormal), FBlockState());
 		return true;
@@ -337,7 +338,7 @@ bool AChunk::SweepTestForVisibility(TArray<FHitResult>& sweepResult, FVector sta
 
 }
 
-bool AChunk::OnRightMouseButton_Implementation(ACharacter* clickedBy, const FHitResult& traceResult, int64 heldItemID)
+bool AChunk::OnRightMouseButton_Implementation(ABaseCharacter* clickedBy, const FHitResult& traceResult, int64 heldItemID)
 {
 	FVector traceLocation = traceResult.ImpactPoint + traceResult.ImpactNormal;
 	auto chunk = UChunkUtilityLib::GetChunkManager()->GetChunkAtWorldLocation(traceLocation);
