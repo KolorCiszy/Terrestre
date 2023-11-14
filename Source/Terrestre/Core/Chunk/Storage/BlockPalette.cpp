@@ -55,10 +55,7 @@ FBlockState FBlockPalette::GetBlockAtIndex(const int16 index) const
     }
     return paletteEntries.Contains(paletteIndex) ? paletteEntries[paletteIndex].block : FBlockState{};
 }
-bool FBlockPalette::IsEmpty() const
-{
-    return paletteEntries[0].block.IsAirBlock() && paletteEntries[0].refCount == AChunk::Volume;
-}
+
 
 
 int16 FBlockPalette::FindBlockPaletteIndex(const FBlockState& block) const
@@ -161,7 +158,7 @@ void FBlockPalette::SetFill(FBlockState blockFill)
     paletteEntries.Add(0, FPaletteEntry(blockFill, AChunk::Volume));
     bHomogenous = true;
 }
-void FBlockPalette::BulkUnpack(TArray<FBlockState, TInlineAllocator<AChunk::Volume>>& outputDestination)
+void FBlockPalette::BulkUnpack(TArray<FBlockState, TInlineAllocator<AChunk::Volume>>& outputDestination) const
 {
     if(bHomogenous)
     {

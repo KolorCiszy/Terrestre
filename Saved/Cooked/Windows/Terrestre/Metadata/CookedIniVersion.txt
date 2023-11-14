@@ -146,7 +146,7 @@ Engine:/Script/UdpMessaging.UdpMessagingSettings:MulticastTimeToLive:0=1
 Engine:/Script/UdpMessaging.UdpMessagingSettings:EnableTunnel:0=False
 Engine:/Script/UdpMessaging.UdpMessagingSettings:TunnelUnicastEndpoint:0=
 Engine:/Script/UdpMessaging.UdpMessagingSettings:TunnelMulticastEndpoint:0=
-Engine:/Script/UnrealEd.UnrealEdEngine:DisplayGamma:0=2.000000
+Engine:/Script/UnrealEd.UnrealEdEngine:DisplayGamma:0=2.500000
 Engine:/Script/EngineSettings.GameMapsSettings:GameInstanceClass:0=/Script/Terrestre.TerrestreGameInstance
 Engine:/Script/EngineSettings.GameMapsSettings:EditorStartupMap:0=/Game/Core/Dimensions/PrimusMundus.PrimusMundus
 Engine:/Script/EngineSettings.GameMapsSettings:GameDefaultMap:0=/Game/Core/Dimensions/PrimusMundus.PrimusMundus
@@ -296,13 +296,13 @@ Engine:/Script/Engine.Engine:DisplayGamma:0=2.2
 Engine:/Script/Engine.Engine:MinDesiredFrameRate:0=60.000000
 Engine:/Script/Engine.Engine:NetErrorLogInterval:0=1.0
 Engine:/Script/Engine.Engine:bSmoothFrameRate:0=True
-Engine:/Script/Engine.Engine:SmoothedFrameRateRange:0=(LowerBound=(Type=Inclusive,Value=20.000000),UpperBound=(Type=Exclusive,Value=70.000000))
+Engine:/Script/Engine.Engine:SmoothedFrameRateRange:0=(LowerBound=(Type=Inclusive,Value=30.000000),UpperBound=(Type=Exclusive,Value=120.000000))
 Engine:/Script/Engine.Engine:bCheckForMultiplePawnsSpawnedInAFrame:0=false
 Engine:/Script/Engine.Engine:NumPawnsAllowedToBeSpawnedInAFrame:0=2
 Engine:/Script/Engine.Engine:DefaultSelectedMaterialColor:0=(R=0.84,G=0.92,B=0.02,A=1.0)
 Engine:/Script/Engine.Engine:bEnableOnScreenDebugMessages:0=true
 Engine:/Script/Engine.Engine:DurationOfErrorsAndWarningsOnHUD:0=0
-Engine:/Script/Engine.Engine:NearClipPlane:0=0.200000
+Engine:/Script/Engine.Engine:NearClipPlane:0=1.000000
 Engine:/Script/Engine.Engine:bUseFixedFrameRate:0=False
 Engine:/Script/Engine.Engine:FixedFrameRate:0=200.000000
 Engine:CoreUObject.Metadata:MetadataRedirects:0=(OldKey="K2Protected", NewKey="BlueprintProtected")
@@ -453,7 +453,6 @@ Engine:DevOptions.Shaders:bLogJobCompletionTimes:0=False
 Engine:DevOptions.Shaders:ProcessGameThreadTargetTime:0=.01
 Engine:DevOptions.Shaders:WorkerTimeToLive:0=20
 Engine:DevOptions.Shaders:BuildWorkerTimeToLive:0=1200
-Engine:DevOptions.Shaders:WorkerProcessPriority:0=-1
 Engine:DevOptions.Shaders:bForceUseSCWMemoryPressureLimits:0=False
 Engine:LogFiles:PurgeLogsDays:0=5
 Engine:LogFiles:MaxLogFilesOnDisk:0=10
@@ -1340,6 +1339,15 @@ Scalability:ShadingQuality@3:r.HairStrands.SkyAO.SampleCount:0=4
 Scalability:ShadingQuality@3:r.HairStrands.Visibility.MSAA.SamplePerPixel:0=4
 Scalability:ShadingQuality@3:r.HairStrands.Interpolation.UseSingleGuide:0=0
 Scalability:ShadingQuality@3:r.AnisotropicMaterials:0=1
+GameplayTags:/Script/GameplayTags.GameplayTagsSettings:ImportTagsFromConfig:0=True
+GameplayTags:/Script/GameplayTags.GameplayTagsSettings:WarnOnInvalidTags:0=True
+GameplayTags:/Script/GameplayTags.GameplayTagsSettings:ClearInvalidTags:0=False
+GameplayTags:/Script/GameplayTags.GameplayTagsSettings:AllowEditorTagUnloading:0=True
+GameplayTags:/Script/GameplayTags.GameplayTagsSettings:AllowGameTagUnloading:0=False
+GameplayTags:/Script/GameplayTags.GameplayTagsSettings:FastReplication:0=False
+GameplayTags:/Script/GameplayTags.GameplayTagsSettings:InvalidTagCharacters:0="\"\',"
+GameplayTags:/Script/GameplayTags.GameplayTagsSettings:NumBitsForContainerSize:0=6
+GameplayTags:/Script/GameplayTags.GameplayTagsSettings:NetIndexFirstBitSegment:0=16
 
 [AdditionalSettings]
 r.AllowStaticLighting=1
@@ -1457,14 +1465,14 @@ VirtualTextureBuiltDataVersion:804E3F7570884B49A4D68C063C7EB6DC=5
 WorldSettingVer:1ED048F42F2E4C6889D053A4F18F102D=1
 ChaosClothConfigVer:76A52329092345B598AED841CF2F6AD8=5
 ChaosClothSharedConfigVer:5FBC690755C840AE8E67F1845EFFF13F=1
-NiagaraVer:FCF57AFA50764283B9A9E658FFA02D32=78
 VariantManagerObjectVer:24BB7AF356464F831F2F2DC249AD96FF=5
+NiagaraVer:FCF57AFA50764283B9A9E658FFA02D32=78
 RealtimeMesh:AF3DD80C4C114B259C7A95155062D6E9=0
 ClothConfigNvVer:9950B70EB41A4E17BBCCFA0D57817FD6=1
 Dev-ControlRig:A7820CFB20A743598C542C149623CF50=25
 AudioSynesthesiaVer:82E77C4E332343A5B46B13C597310DF3=0
-Paper2DVer:11310AED2E554D61AF679AA3C5A1082C=17
 Dev-IKRig:F6DFBB78BB50A0E44018B84D60CBAF23=2
+Paper2DVer:11310AED2E554D61AF679AA3C5A1082C=17
 PackageFileVersionUE4=522
 PackageFileVersionUE5=1009
 PackageLicenseeVersion=0

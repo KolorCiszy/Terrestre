@@ -44,11 +44,17 @@ void APlayerCharacter::OnConstruction(const FTransform& Transform)
 
 void APlayerCharacter::RegisterCharacterToWorld()
 {
-    UChunkUtilityLib::GetChunkManager()->RegisterPlayerCharacter(this);
+    if (auto manager = UChunkUtilityLib::GetChunkManager())
+    {
+        manager->RegisterPlayerCharacter(this);
+    }
 }
 void APlayerCharacter::UnRegisterCharacterToWorld()
 {
-    UChunkUtilityLib::GetChunkManager()->UnRegisterPlayerCharacter(this);
+    if(auto manager = UChunkUtilityLib::GetChunkManager())
+    {
+        manager->UnRegisterPlayerCharacter(this);
+    }
 }
 
 // Called when the game starts or when spawned
@@ -56,7 +62,6 @@ void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
     RegisterCharacterToWorld();
-    GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Flying);
 }
 
 void APlayerCharacter::PossessedBy(AController* NewController)
@@ -70,14 +75,13 @@ void APlayerCharacter::PossessedBy(AController* NewController)
 	}
 }
 // Called every frame
+
 void APlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
     if(LastTickLocation != GetActorLocation())
     {
-        //UChunkUtilityLib::GetChunkManager(this);
         OnPlayerLocationChanged.Broadcast(GetActorLocation());
-        
     }
     LastTickLocation = GetActorLocation();
     
@@ -105,18 +109,59 @@ void APlayerCharacter::VisibilityLineTrace(bool& bHitSuccesful, FHitResult& hitR
 }
 void APlayerCharacter::Move(const FInputActionValue& Value)
 {
-    if (Controller != nullptr)
+    if (Controller == nullptr)
     {
-        const FVector2D MoveValue = Value.Get<FVector2D>();
-        const FRotator MovementRotation(0, Controller->GetControlRotation().Yaw, 0);
+        return;
+    }
+    FRotator MovementRotation{ 0,0,0 };
+    const FVector2D MoveValue = Value.Get<FVector2D>();
+    if (GetCharacterMovement()->IsSwimming())
+    {
+        if (bSwimmingOnWaterSurface)
+        {
+           
+            if (FMath::IsWithin(GetControlRotation().Pitch, 270, 360))
+            {
+                MovementRotation.Pitch = GetControlRotation().Pitch;
+            }
+          
+            MovementRotation.Yaw = GetControlRotation().Yaw;
 
+            if (MoveValue.Y > 0.f)
+            {
+                // Get forward vector
+                const FVector Direction = MovementRotation.RotateVector(FVector::ForwardVector);
+
+                AddMovementInput(Direction, MoveValue.Y);
+            }
+
+        }
+        else
+        {
+            MovementRotation.Pitch = Controller->GetControlRotation().Pitch;
+            MovementRotation.Yaw = Controller->GetControlRotation().Yaw;
+
+            if (MoveValue.Y > 0.f)
+            {
+                // Get forward vector
+                const FVector Direction = MovementRotation.RotateVector(FVector::ForwardVector);
+
+                AddMovementInput(Direction, MoveValue.Y);
+            }
+        }
+    }
+
+    else
+    {
+        MovementRotation.Yaw = Controller->GetControlRotation().Yaw;
+    
         // Forward/Backward direction
         if (MoveValue.Y != 0.f)
         {
             // Get forward vector
             const FVector Direction = MovementRotation.RotateVector(FVector::ForwardVector);
 
-            AddMovementInput(Direction, MoveValue.Y);//(GetCharacterMovement()->MaxWalkSpeed());
+            AddMovementInput(Direction, MoveValue.Y);
         }
 
         // Right/Left direction
@@ -124,10 +169,12 @@ void APlayerCharacter::Move(const FInputActionValue& Value)
         {
             // Get right vector
             const FVector Direction = MovementRotation.RotateVector(FVector::RightVector);
-            
+
             AddMovementInput(Direction, MoveValue.X);
         }
     }
+        
+    
 }
 
 void APlayerCharacter::Look(const FInputActionValue& Value)
@@ -154,7 +201,7 @@ void APlayerCharacter::Jump()
     {
         case MOVE_Flying: AddMovementInput(FVector::UpVector, 200.0f, 0);
             break;
-        case MOVE_Swimming: AddMovementInput(FVector::UpVector, 100.0f, 0);
+        case MOVE_Swimming: //AddMovementInput(FVector::UpVector, 100.0f, 0);
             break;
     }
    
@@ -163,9 +210,9 @@ void APlayerCharacter::Crouch()
 {
     switch (GetCharacterMovement()->MovementMode)
     {
-    case MOVE_Flying: AddMovementInput(FVector::UpVector, 200.0f, 0);
+    case MOVE_Flying: AddMovementInput(FVector::DownVector, 200.0f, 0);
         break;
-    case MOVE_Swimming: AddMovementInput(FVector::UpVector, 100.0f, 0);
+    case MOVE_Swimming: //AddMovementInput(FVector::UpVector, 100.0f, 0);
         break;
     case MOVE_Walking:  
         if (CanCrouch())

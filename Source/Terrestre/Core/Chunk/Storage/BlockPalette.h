@@ -23,7 +23,7 @@ public:
 	{	};
 	FBlockPalette(TArray<FBlockState, TInlineAllocator<AChunk::Volume>>& rawData);
 
-	FBlockPalette(const FBlockPalette&) = delete;
+	FBlockPalette(const FBlockPalette&) = default;
 	
 	FBlockPalette(FBlockPalette&& move)
 	{
@@ -32,7 +32,7 @@ public:
 		bHomogenous = move.bHomogenous;
 		bitsPerBlock = move.bitsPerBlock;
 	}
-	FBlockPalette& operator=(const FBlockPalette&) = delete;
+	FBlockPalette& operator=(const FBlockPalette&) = default;
 
 	FBlockPalette& operator=(FBlockPalette&& move)
 	{
@@ -46,10 +46,13 @@ public:
 	// * Gets the block state at given index (chunk index)
 	FBlockState GetBlockAtIndex(const int16 index) const;
 	// * Decodes all data into an array
-	void BulkUnpack(TArray<FBlockState, TInlineAllocator<AChunk::Volume>>& outputDestination);
+	void BulkUnpack(TArray<FBlockState, TInlineAllocator<AChunk::Volume>>& outputDestination) const;
 
 	
-	bool IsEmpty() const;
+	bool FORCEINLINE IsEmpty() const
+	{
+		return paletteEntries[0].block.IsAirBlock() && paletteEntries[0].refCount == AChunk::Volume;
+	}
 	
 
 	/* blockFill - this type of block fills whole section */
@@ -66,7 +69,7 @@ public:
 private:
 	int16 FindBlockPaletteIndex(const FBlockState& block) const;
 
-	uint8 CalculateBitsPerBlock() const; 
+	uint8 FORCEINLINE CalculateBitsPerBlock() const; 
 	
 	TBitArray<FDefaultAllocator> data;
 	TSortedMap<int16, FPaletteEntry> paletteEntries; // <index, paletteEntry>

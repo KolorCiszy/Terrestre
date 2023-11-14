@@ -5,12 +5,11 @@
 #include "Chunk.h"
 #include "ChunkUtilityLib.h"
 #include "ChunkManager.h"
+#include "Terrestre/Core/TerrestreNativeGameplayTags.h"
 #include "Misc/Directions.h"
-#include "ProceduralMeshComponent.h"
 #include "Terrestre/Core/Character/BaseCharacter.h"
 #include "Terrestre/Core/Block/BlockData.h"
 #include "Async/GenerateChunkMeshTask.h"
-#include "RealtimeMeshComponent.h"
 
 
 
@@ -30,29 +29,28 @@ AChunk::AChunk()
 	bReadyToDestroy = false;
 	bMeshDirty = false;
 	bMeshingTaskDone = false;
-
-	RealtimeMeshComponent = CreateDefaultSubobject<URealtimeMeshComponent>(TEXT("RealtimeMeshComponent"));
-	RealtimeMeshComponent->SetMobility(EComponentMobility::Movable);
-	RealtimeMeshComponent->SetGenerateOverlapEvents(false);
-	RealtimeMeshComponent->SetCollisionProfileName(UCollisionProfile::BlockAll_ProfileName);
-
-	SetRootComponent(RealtimeMeshComponent);
-
+	BlockSectionConfig.DrawType = ERealtimeMeshSectionDrawType::Dynamic;
+	BlockSectionConfig.MaterialSlot = 0;
+	WaterSectionConfig.DrawType = ERealtimeMeshSectionDrawType::Dynamic;
+	WaterSectionConfig.MaterialSlot = 1;
+	WaterSectionConfig.bCastsShadow = false;
+	MeshLODKey = 0;
 }
 
+void AChunk::OnGenerateMesh_Implementation()
+{
+	RealtimeMesh = GetRealtimeMeshComponent()->InitializeRealtimeMesh<URealtimeMeshSimple>();
 
+	RealtimeMesh->SetupMaterialSlot(0, TEXT("BLOCK STATES MATERIAL"), BlockMaterial);
+	RealtimeMesh->SetupMaterialSlot(1, TEXT("WATER MATERIAL"), WaterMaterial);
 
+	MarkMeshDirty();
+}
 // Called when the game starts or when spawned
 void AChunk::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	realtimeMesh = RealtimeMeshComponent->InitializeRealtimeMesh<URealtimeMeshSimple>();
-	realtimeMesh->SetupMaterialSlot(0, TEXT("BLOCK STATES MATERIAL"), BlockMaterial);
-	realtimeMesh->SetupMaterialSlot(1, TEXT("WATER MATERIAL"), WaterMaterial);
-
-	meshingTask = new FAsyncTask<FGenerateChunkMeshTask>(this);
-	MarkMeshDirty();
+	MeshingTask = new FAsyncTask<FGenerateChunkMeshTask>(this);
 }
 
 FBlockPalette* AChunk::GetBlockPalette() const
@@ -69,10 +67,9 @@ void AChunk::Tick(float DeltaTime)
 
 void AChunk::CreateMeshAsync()
 {
-	if(meshingTask && bMeshDirty && meshingTask->IsDone())
+	if(MeshingTask && bMeshDirty && MeshingTask->IsDone())
 	{
-		
-		meshingTask->StartBackgroundTask(UChunkUtilityLib::GetChunkManager()->ChunkMeshingTP, EQueuedWorkPriority::Highest, EQueuedWorkFlags::DoNotRunInsideBusyWait);
+		MeshingTask->StartBackgroundTask(UChunkUtilityLib::GetChunkManager()->ChunkMeshingTP, EQueuedWorkPriority::Highest, EQueuedWorkFlags::DoNotRunInsideBusyWait);
 		bMeshingTaskDone = false;
 		bMeshReady = false;
 		UChunkUtilityLib::GetChunkManager()->OnRebuildChunkMeshes.AddUniqueDynamic(this, &AChunk::CreateMeshAsync);
@@ -81,18 +78,25 @@ void AChunk::CreateMeshAsync()
 
 };
 
-void AChunk::ClearMeshSection(int32 sectionNum)
+void AChunk::ResetMesh()
 {
-	realtimeMesh->Reset(false);
-	bBlockMeshCreated = false;
-	bFluidMeshCreated = false;
+	if (bBlockMeshCreated)
+	{
+		RealtimeMesh->RemoveSection(BlockMeshSectionKey);
+		bBlockMeshCreated = false;
+	}
+	if (bFluidMeshCreated)
+	{
+		RealtimeMesh->RemoveSection(WaterMeshSectionKey);
+		bFluidMeshCreated = false;
+	}
+	RealtimeMesh->UpdateCollision(true);
 }
 void AChunk::MarkMeshReady()
 {
 	UChunkUtilityLib::GetChunkManager()->ActiveMeshingTasksCount--;
 	AsyncTask(ENamedThreads::GameThread, [&]() 
 		{
-			
 			bMeshReady = true;
 			UChunkUtilityLib::GetChunkManager()->OnApplyChunkMeshes.AddUniqueDynamic(this, &AChunk::ApplyMesh);
 			UChunkUtilityLib::GetChunkManager()->OnRebuildChunkMeshes.RemoveDynamic(this, &AChunk::CreateMeshAsync);
@@ -101,59 +105,53 @@ void AChunk::MarkMeshReady()
 
 void AChunk::ApplyMesh()
 {
-	if (meshingTask->IsDone())
+	if (MeshingTask->IsDone())
 	{
 		bMeshingTaskDone = true;
-		FMeshData& blockMeshData = *meshingTask->GetTask().blockStateMeshData;
-		FMeshData& fluidMeshData = *meshingTask->GetTask().fluidStateMeshData;
-
+		FMeshData& blockMeshData = *MeshingTask->GetTask().blockStateMeshData;
+		FMeshData& fluidMeshData = *MeshingTask->GetTask().fluidStateMeshData;
+		
 		if (blockMeshData.Positions.Num() > 3)
 		{
-			if (!bBlockMeshCreated)
+			if (bBlockMeshCreated)
 			{
-				FRealtimeMeshSectionConfig config{ ERealtimeMeshSectionDrawType::Dynamic, 0 };
-				blockMeshSectionKey = realtimeMesh->CreateMeshSection(0, config, blockMeshData, true);
-				bBlockMeshCreated = true;
+				RealtimeMesh->UpdateSectionMesh(BlockMeshSectionKey, blockMeshData);
 			}
 			else
 			{
-				realtimeMesh->UpdateSectionMesh(blockMeshSectionKey, blockMeshData);
+				BlockMeshSectionKey = RealtimeMesh->CreateMeshSection(MeshLODKey, BlockSectionConfig, blockMeshData, true);
+				bBlockMeshCreated = true;
 			}
 		}
 		else if(bBlockMeshCreated)
 		{
-			realtimeMesh->RemoveSection(blockMeshSectionKey);
+			RealtimeMesh->RemoveSection(BlockMeshSectionKey);
 			bBlockMeshCreated = false;
 		}
 
 		if (fluidMeshData.Positions.Num() > 3)
 		{
-			if (!bFluidMeshCreated)
+
+			if (bFluidMeshCreated)
 			{
-				FRealtimeMeshSectionConfig config{ ERealtimeMeshSectionDrawType::Dynamic, 1 };
-				config.bCastsShadow = false;
-				config.bForceOpaque = false;
-				
-				fluidMeshSectionKey = realtimeMesh->CreateMeshSection(0, config, fluidMeshData, false);
-				bFluidMeshCreated = true;
+				RealtimeMesh->UpdateSectionMesh(WaterMeshSectionKey, fluidMeshData);
 			}
 			else
 			{
-				realtimeMesh->UpdateSectionMesh(fluidMeshSectionKey, fluidMeshData);
+				WaterMeshSectionKey = RealtimeMesh->CreateMeshSection(MeshLODKey, WaterSectionConfig, fluidMeshData);
+				bFluidMeshCreated = true;
 			}
 		}
 		else if(bFluidMeshCreated)
 		{
-			realtimeMesh->RemoveSection(fluidMeshSectionKey);
+			RealtimeMesh->RemoveSection(WaterMeshSectionKey);
 			bFluidMeshCreated = false;
 		}
 
-		meshingTask->GetTask().ResetData();
+		MeshingTask->GetTask().ResetData();
 		bMeshDirty = false;
 		UChunkUtilityLib::GetChunkManager()->OnApplyChunkMeshes.RemoveDynamic(this, &AChunk::ApplyMesh);
-			
 	}
-	
 }
 
 bool AChunk::MarkMeshDirty()
@@ -165,7 +163,6 @@ bool AChunk::MarkMeshDirty()
 		return true;
 	}
 	return false;
-
 }
 
 bool AChunk::IsEmpty() const
@@ -212,7 +209,14 @@ bool AChunk::ModifyBlockAtLocalPosition(const FIntVector localPos, const FBlockS
 	{
 
 		GetBlockPalette()->ModifyBlockAtIndex(UChunkUtilityLib::LocalBlockPosToIndex(localPos), newBlock);
-		MarkMeshDirty();
+		if (bRequestMeshUpdate)
+		{
+			MarkMeshDirty();
+		}
+		else
+		{
+			return true;
+		}
 		if (localPos.X == Size - 1)
 		{
 			if(auto chunk = GetNeighbourChunk(EDirections::Forward))
@@ -262,62 +266,56 @@ bool AChunk::ModifyBlockAtLocalPosition(const FIntVector localPos, const FBlockS
 
 void AChunk::CancelMeshingTask()
 {
-	if (meshingTask)
+	if (MeshingTask)
 	{
-		if (meshingTask->IsDone())
+		if (MeshingTask->IsDone())
 		{
 			bMeshingTaskDone = true;
 		}
 		else
 		{
-			meshingTask->Cancel();
-			meshingTask->EnsureCompletion(false, true);
+			MeshingTask->Cancel();
+			MeshingTask->EnsureCompletion(false, true);
 			bMeshingTaskDone = true;
 		}
-		meshingTask->GetTask().ResetData();
+		MeshingTask->GetTask().ResetData();
 		
 	}
 }
 
 void AChunk::MarkPendingDestroy() 
 {
-	if(bPendingDestroy.load())
+	if(bPendingDestroy)
 	{
 		return;
 	}
 
-	bPendingDestroy.store(1);
+	bPendingDestroy = true;
 	CancelMeshingTask();
-	bReadyToDestroy.store(1);
+	bReadyToDestroy = true;;
 };
 
 void AChunk::EndPlay(EEndPlayReason::Type reason)
 {
 	MarkPendingDestroy();
-	delete meshingTask;
-}
-
-bool AChunk::IsInsideBounds(FVector inWorldLocation)
-{
-	FBox Box{};
-	Box.BuildAABB(GetActorLocation(), SizeScaled);
-	return Box.IsInside(inWorldLocation);
+	delete MeshingTask;
 }
 
 FName AChunk::OnVisibleByCharacter_Implementation(ABaseCharacter* visibleBy, const FHitResult& traceResult)
 {
-	//GEngine->AddOnScreenDebugMessage(0, 0.5f, FColor::Cyan, TEXT("lalala"), true);
 	FVector traceLocation = traceResult.ImpactPoint - traceResult.ImpactNormal;
 	int64 blockID = GetBlockAtLocalPosition(UChunkUtilityLib::WorldLocationToLocalBlockPos(traceLocation)).blockID;
 	return BlockData::GetBlockDisplayName(blockID);
 }
 
-bool AChunk::OnLeftMouseButton_Implementation(ABaseCharacter* clickedBy, const FHitResult& traceResult, int64 heldItemID)
+bool AChunk::OnLeftMouseButton_Implementation(ABaseCharacter* clickedBy, const FHitResult& traceResult, int32 heldItemID)
 {
-	if (clickedBy->GetCharacterGameplayTags().HasTag(UGameplayTagsManager::Get().RequestGameplayTag(TEXT("Player"))))
+	if (clickedBy->GetCharacterGameplayTags().HasTag(UGameplayTagsManager::Get().RequestGameplayTag(TEXT("Terrestre.Character.Player"))))
 	{
-		ModifyBlockAtLocalPosition(UChunkUtilityLib::WorldLocationToLocalBlockPos(traceResult.ImpactPoint - traceResult.ImpactNormal), FBlockState());
-		return true;
+		if (ModifyBlockAtLocalPosition(UChunkUtilityLib::WorldLocationToLocalBlockPos(traceResult.ImpactPoint - traceResult.ImpactNormal), FBlockState()))
+		{
+			return true;
+		}
 	}
 	return false;
 }
@@ -338,7 +336,7 @@ bool AChunk::SweepTestForVisibility(TArray<FHitResult>& sweepResult, FVector sta
 
 }
 
-bool AChunk::OnRightMouseButton_Implementation(ABaseCharacter* clickedBy, const FHitResult& traceResult, int64 heldItemID)
+bool AChunk::OnRightMouseButton_Implementation(ABaseCharacter* clickedBy, const FHitResult& traceResult, int32 heldItemID)
 {
 	FVector traceLocation = traceResult.ImpactPoint + traceResult.ImpactNormal;
 	auto chunk = UChunkUtilityLib::GetChunkManager()->GetChunkAtWorldLocation(traceLocation);

@@ -22,6 +22,9 @@ struct FFluidState
 		return fluidID == other.fluidID;
 	};
 	
-
+	bool IsWater()
+	{
+		return fluidID == 1;
+	}
 
 };

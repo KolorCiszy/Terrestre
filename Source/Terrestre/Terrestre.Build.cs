@@ -7,12 +7,13 @@ public class Terrestre : ModuleRules
 	public Terrestre(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
+        
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore" , "EnhancedInput" , "RealtimeMeshComponent", "ProceduralMeshComponent", "DataRegistry", "FastNoise", "FastNoiseGenerator"});
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore" , "EnhancedInput" , "RealtimeMeshComponent", "ProceduralMeshComponent", "DataRegistry", "FastNoise", "FastNoiseGenerator", "GameplayTags"});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 
-        
+      
         // Uncomment if you are using Slate UI
         // PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
 

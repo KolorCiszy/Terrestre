@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 #include "ChunkHelper.generated.h"
 
-//Stores flags (0 or 1) to know if a face has already been checked
+//Stores flags to know if a face has already been checked
 USTRUCT()
 struct FChunkHelper
 {
@@ -17,7 +17,7 @@ public:
 	TArray<bool> visitedYP; 
 
 	FORCEINLINE
-	void SetSize(int chunkVolume)
+	void SetSize(int32 chunkVolume)
 	{
 		visitedXN.SetNum(chunkVolume);
 		visitedXP.SetNum(chunkVolume);

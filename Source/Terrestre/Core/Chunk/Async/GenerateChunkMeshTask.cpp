@@ -358,7 +358,8 @@ void FGenerateChunkMeshTask::GenerateWaterMesh()
 				int16 runLength = 0;
 				/* Index of block that's being currently compared in the chunkHelper */
 				int32 compareFluidIndex = 0;
-				
+				/* Local fluid pos that's being currently compared in the chunkHelper */
+				FIntVector compareFluidPos{};
 
 				// Left face (Y-)
 				if (!chunkHelper.visitedYN[currentIndex] && !HasWater(currentPosition, EDirections::Left) && IsVisibleFace(currentPosition, EDirections::Left))
@@ -366,8 +367,10 @@ void FGenerateChunkMeshTask::GenerateWaterMesh()
 					// Search upwards to determine run length
 					for (int16 q = z; q < AChunk::Size; q++)
 					{
-						compareFluidIndex = UChunkUtilityLib::LocalBlockPosToIndex(FIntVector{ x,y,q });
-						if ((fluidStates.GetData() + compareFluidIndex)->fluidID == 1)
+						compareFluidPos = { x,y,q };
+						compareFluidIndex = UChunkUtilityLib::LocalBlockPosToIndex(compareFluidPos);
+						
+						if ((fluidStates.GetData() + compareFluidIndex)->fluidID == 1 && IsVisibleFace(compareFluidPos, EDirections::Left) && !HasWater(compareFluidPos, EDirections::Left))
 						{
 							chunkHelper.visitedYN[compareFluidIndex] = true;
 							runLength++;
@@ -394,9 +397,9 @@ void FGenerateChunkMeshTask::GenerateWaterMesh()
 					// Search upwards to determine run length
 					for (int16 q = z; q < AChunk::Size; q++)
 					{
-						// Pre-calculate the array lookup as it is used twice
-						compareFluidIndex = UChunkUtilityLib::LocalBlockPosToIndex(FIntVector{ x,y,q });
-						if ((fluidStates.GetData() + compareFluidIndex)->fluidID == 1)
+						compareFluidPos = { x,y,q };
+						compareFluidIndex = UChunkUtilityLib::LocalBlockPosToIndex(compareFluidPos);
+						if ((fluidStates.GetData() + compareFluidIndex)->fluidID == 1 && IsVisibleFace(compareFluidPos, EDirections::Right) && !HasWater(compareFluidPos, EDirections::Right))
 						{
 							chunkHelper.visitedYP[compareFluidIndex] = true;
 							runLength++;
@@ -422,8 +425,10 @@ void FGenerateChunkMeshTask::GenerateWaterMesh()
 					// Search upwards to determine run length
 					for (int16 q = z; q < AChunk::Size; q++)
 					{
-						compareFluidIndex = UChunkUtilityLib::LocalBlockPosToIndex(FIntVector{ x,y,q });
-						if ((fluidStates.GetData() + compareFluidIndex)->fluidID == 1)
+						compareFluidPos = { x,y,q };
+						compareFluidIndex = UChunkUtilityLib::LocalBlockPosToIndex(compareFluidPos);
+
+						if ((fluidStates.GetData() + compareFluidIndex)->fluidID == 1 && IsVisibleFace(compareFluidPos, EDirections::Forward) && !HasWater(compareFluidPos, EDirections::Forward))
 						{
 							chunkHelper.visitedXP[compareFluidIndex] = true;
 							runLength++;
@@ -450,8 +455,9 @@ void FGenerateChunkMeshTask::GenerateWaterMesh()
 					// Search upwards to determine run length
 					for (int16 q = z; q < AChunk::Size; q++)
 					{
-						compareFluidIndex = UChunkUtilityLib::LocalBlockPosToIndex(FIntVector{ x,y,q });
-						if ((fluidStates.GetData() + compareFluidIndex)->fluidID == 1)
+						compareFluidPos = { x,y,q };
+						compareFluidIndex = UChunkUtilityLib::LocalBlockPosToIndex(compareFluidPos);
+						if ((fluidStates.GetData() + compareFluidIndex)->fluidID == 1 && IsVisibleFace(compareFluidPos, EDirections::Backward) && !HasWater(compareFluidPos, EDirections::Backward))
 						{
 							chunkHelper.visitedXN[compareFluidIndex] = true;
 							runLength++;
@@ -478,8 +484,10 @@ void FGenerateChunkMeshTask::GenerateWaterMesh()
 					// Search forwards to determine run length
 					for (int16 q = x; q < AChunk::Size; q++)
 					{
-						compareFluidIndex = UChunkUtilityLib::LocalBlockPosToIndex(FIntVector{ q,y,z });
-						if ((fluidStates.GetData() + compareFluidIndex)->fluidID == 1)
+						compareFluidPos = { q,y,z };
+						compareFluidIndex = UChunkUtilityLib::LocalBlockPosToIndex(compareFluidPos);
+						
+						if ((fluidStates.GetData() + compareFluidIndex)->fluidID == 1 && IsVisibleFace(compareFluidPos, EDirections::Up) && !HasWater(compareFluidPos, EDirections::Up))
 						{
 							chunkHelper.visitedZP[compareFluidIndex] = true;
 							runLength++;
@@ -506,8 +514,10 @@ void FGenerateChunkMeshTask::GenerateWaterMesh()
 					// Search forwards to determine run length
 					for (int16 q = x; q < AChunk::Size; q++)
 					{
-						compareFluidIndex = UChunkUtilityLib::LocalBlockPosToIndex(FIntVector{ q,y,z });
-						if ((fluidStates.GetData() + compareFluidIndex)->fluidID == 1)
+						compareFluidPos = { q,y,z };
+						compareFluidIndex = UChunkUtilityLib::LocalBlockPosToIndex(compareFluidPos);
+						
+						if ((fluidStates.GetData() + compareFluidIndex)->fluidID == 1 && IsVisibleFace(compareFluidPos, EDirections::Down) && !HasWater(compareFluidPos, EDirections::Down))
 						{
 							chunkHelper.visitedZN[compareFluidIndex] = true;
 							runLength++;

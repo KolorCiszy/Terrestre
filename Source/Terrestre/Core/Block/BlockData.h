@@ -76,11 +76,11 @@ namespace BlockData
 	bool bInitialized = false;
 	
 	inline UDataRegistry* dataRegistry;
+
 	static void Initialize()
 	{
 		if(!bInitialized)
 		{
-			
 			dataRegistry = UDataRegistrySubsystem::Get()->GetRegistryForType(BlockData::RegistryName);
 		}
 	}

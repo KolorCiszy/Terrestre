@@ -49,6 +49,8 @@ protected:
 
 	virtual void EndPlay(EEndPlayReason::Type reason) override;
 
+	
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	TObjectPtr<UInputMappingContext> DefaultInputMapping;
 

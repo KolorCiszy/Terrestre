@@ -61,6 +61,10 @@
 			"ChunkId": "4a782f60fcb4c26e00000002"
 		},
 		{
+			"Path": "Engine/Content/EditorBlueprintResources/StandardMacros.uasset",
+			"ChunkId": "72ff6427f1042ed200000001"
+		},
+		{
 			"Path": "Engine/Content/EditorLandscapeResources/DataLayer.uasset",
 			"ChunkId": "fe8e2f79bc05d6e200000001"
 		},
@@ -533,10 +537,6 @@
 			"ChunkId": "f421d8f857b9ed0300000002"
 		},
 		{
-			"Path": "Engine/Content/EngineResources/AICON-Red.uasset",
-			"ChunkId": "ce06fb0471484f4500000001"
-		},
-		{
 			"Path": "Engine/Content/EngineResources/Black.uasset",
 			"ChunkId": "cda0cf6115260c9400000001"
 		},
@@ -635,6 +635,14 @@
 		{
 			"Path": "Engine/Content/EngineSounds/Submixes/MasterSubmixDefault.uasset",
 			"ChunkId": "b059d54260cfd24100000001"
+		},
+		{
+			"Path": "Engine/Content/Functions/Engine_MaterialFunctions01/Gradient/DiamondGradient.uasset",
+			"ChunkId": "aa857baf732182e300000001"
+		},
+		{
+			"Path": "Engine/Content/Functions/Engine_MaterialFunctions01/Gradient/LinearGradient.uasset",
+			"ChunkId": "e43855b9d402d6d500000001"
 		},
 		{
 			"Path": "Engine/Content/Functions/Engine_MaterialFunctions01/Opacity/CameraDepthFade.uasset",
@@ -1345,6 +1353,14 @@
 			"ChunkId": "7b967f8ff09764ce00000001"
 		},
 		{
+			"Path": "Engine/Plugins/Enterprise/DatasmithContent/Content/Materials/Water/Textures/T_Water_N.uasset",
+			"ChunkId": "5f2f8639ea2ce2f600000001"
+		},
+		{
+			"Path": "Engine/Plugins/Enterprise/DatasmithContent/Content/Materials/Water/Textures/T_Water_N.ubulk",
+			"ChunkId": "5f2f8639ea2ce2f600000002"
+		},
+		{
 			"Path": "Engine/Plugins/Experimental/MeshModelingToolsetExp/Content/Curves/ContrastAdjustmentCurve.uasset",
 			"ChunkId": "ebd4b72bc5179bc100000001"
 		},
@@ -1395,6 +1411,10 @@
 		{
 			"Path": "Terrestre/Content/Core/Data/TerrainGeneration/TerrainShaperCurves.uasset",
 			"ChunkId": "b7b230c6d1ac458400000001"
+		},
+		{
+			"Path": "Terrestre/Content/Core/Data/TerrainGeneration/TerrainShaperSettings_DA.uasset",
+			"ChunkId": "f6d5f47dbffcb9cb00000001"
 		},
 		{
 			"Path": "Terrestre/Content/Core/Dimensions/PrimusMundus.umap",
@@ -1453,6 +1473,14 @@
 			"ChunkId": "918a4a67bb46fd9800000001"
 		},
 		{
+			"Path": "Terrestre/Content/Core/Player/UI/Textures/Star_1.uasset",
+			"ChunkId": "028bcfc4aba6c5db00000001"
+		},
+		{
+			"Path": "Terrestre/Content/Core/UI/Inventory/InventorySlot_WBP.uasset",
+			"ChunkId": "3015b3d294e34dff00000001"
+		},
+		{
 			"Path": "Terrestre/Content/Core/World/Chunk/AChunk_BP.uasset",
 			"ChunkId": "362b610789693efb00000001"
 		},
@@ -1473,12 +1501,20 @@
 			"ChunkId": "0635dd77e461a24700000001"
 		},
 		{
-			"Path": "Terrestre/Content/Core/World/Materials/Terrain/Water_M.uasset",
-			"ChunkId": "1e9fdd1732bb2daa00000001"
+			"Path": "Terrestre/Content/Core/World/Materials/Water/GetClipPlane_MF.uasset",
+			"ChunkId": "5db663c10db0210c00000001"
 		},
 		{
-			"Path": "Terrestre/Content/Core/World/Materials/Terrain/Water_MI.uasset",
-			"ChunkId": "c221c8ddb87acdca00000001"
+			"Path": "Terrestre/Content/Core/World/Materials/Water/UnderwaterPP_M.uasset",
+			"ChunkId": "e5eed1db08ef215c00000001"
+		},
+		{
+			"Path": "Terrestre/Content/Core/World/Materials/Water/Water_M.uasset",
+			"ChunkId": "f4b93b865bfcc4ad00000001"
+		},
+		{
+			"Path": "Terrestre/Content/Core/World/Materials/Water/Water_MI.uasset",
+			"ChunkId": "aa1df3c6540ae16e00000001"
 		},
 		{
 			"Path": "Terrestre/Content/Core/World/Textures/Terrain/basalt_smooth.uasset",
@@ -1499,6 +1535,10 @@
 		{
 			"Path": "Terrestre/Content/Core/World/Textures/Terrain/grassTop.uasset",
 			"ChunkId": "6b40908c831dda4a00000001"
+		},
+		{
+			"Path": "Terrestre/Content/Core/World/Textures/Terrain/sand.uasset",
+			"ChunkId": "cd35a58c5fef668800000001"
 		},
 		{
 			"Path": "Terrestre/Content/Core/World/Textures/Terrain/Terrain_TA2D.uasset",
@@ -2033,6 +2073,15 @@
 			]
 		},
 		{
+			"Name": "/DatasmithContent/Materials/Water/Textures/T_Water_N",
+			"ExportBundleChunkIds": [
+				"5f2f8639ea2ce2f600000001"
+			],
+			"BulkDataChunkIds": [
+				"5f2f8639ea2ce2f600000002"
+			]
+		},
+		{
 			"Name": "/Engine/Animation/DefaultAnimBoneCompressionSettings",
 			"ExportBundleChunkIds": [
 				"19aece732b01cd4000000001"
@@ -2102,6 +2151,12 @@
 			],
 			"BulkDataChunkIds": [
 				"4a782f60fcb4c26e00000002"
+			]
+		},
+		{
+			"Name": "/Engine/EditorBlueprintResources/StandardMacros",
+			"ExportBundleChunkIds": [
+				"72ff6427f1042ed200000001"
 			]
 		},
 		{
@@ -2753,12 +2808,6 @@
 			]
 		},
 		{
-			"Name": "/Engine/EngineResources/AICON-Red",
-			"ExportBundleChunkIds": [
-				"ce06fb0471484f4500000001"
-			]
-		},
-		{
 			"Name": "/Engine/EngineResources/Black",
 			"ExportBundleChunkIds": [
 				"cda0cf6115260c9400000001"
@@ -2897,6 +2946,18 @@
 			"Name": "/Engine/EngineSounds/Submixes/MasterSubmixDefault",
 			"ExportBundleChunkIds": [
 				"b059d54260cfd24100000001"
+			]
+		},
+		{
+			"Name": "/Engine/Functions/Engine_MaterialFunctions01/Gradient/DiamondGradient",
+			"ExportBundleChunkIds": [
+				"aa857baf732182e300000001"
+			]
+		},
+		{
+			"Name": "/Engine/Functions/Engine_MaterialFunctions01/Gradient/LinearGradient",
+			"ExportBundleChunkIds": [
+				"e43855b9d402d6d500000001"
 			]
 		},
 		{
@@ -3161,6 +3222,12 @@
 			]
 		},
 		{
+			"Name": "/Game/Core/Data/TerrainGeneration/TerrainShaperSettings_DA",
+			"ExportBundleChunkIds": [
+				"f6d5f47dbffcb9cb00000001"
+			]
+		},
+		{
 			"Name": "/Game/Core/Dimensions/MundusPrimus"
 		},
 		{
@@ -3251,6 +3318,18 @@
 			]
 		},
 		{
+			"Name": "/Game/Core/Player/UI/Textures/Star_1",
+			"ExportBundleChunkIds": [
+				"028bcfc4aba6c5db00000001"
+			]
+		},
+		{
+			"Name": "/Game/Core/UI/Inventory/InventorySlot_WBP",
+			"ExportBundleChunkIds": [
+				"3015b3d294e34dff00000001"
+			]
+		},
+		{
 			"Name": "/Game/Core/World/Chunk/AChunk_BP",
 			"ExportBundleChunkIds": [
 				"362b610789693efb00000001"
@@ -3284,15 +3363,33 @@
 			]
 		},
 		{
-			"Name": "/Game/Core/World/Materials/Terrain/Water_M",
+			"Name": "/Game/Core/World/Materials/Terrain/Water_M"
+		},
+		{
+			"Name": "/Game/Core/World/Materials/Terrain/Water_MI"
+		},
+		{
+			"Name": "/Game/Core/World/Materials/Water/GetClipPlane_MF",
 			"ExportBundleChunkIds": [
-				"1e9fdd1732bb2daa00000001"
+				"5db663c10db0210c00000001"
 			]
 		},
 		{
-			"Name": "/Game/Core/World/Materials/Terrain/Water_MI",
+			"Name": "/Game/Core/World/Materials/Water/UnderwaterPP_M",
 			"ExportBundleChunkIds": [
-				"c221c8ddb87acdca00000001"
+				"e5eed1db08ef215c00000001"
+			]
+		},
+		{
+			"Name": "/Game/Core/World/Materials/Water/Water_M",
+			"ExportBundleChunkIds": [
+				"f4b93b865bfcc4ad00000001"
+			]
+		},
+		{
+			"Name": "/Game/Core/World/Materials/Water/Water_MI",
+			"ExportBundleChunkIds": [
+				"aa1df3c6540ae16e00000001"
 			]
 		},
 		{
@@ -3323,6 +3420,12 @@
 			"Name": "/Game/Core/World/Textures/Terrain/grassTop",
 			"ExportBundleChunkIds": [
 				"6b40908c831dda4a00000001"
+			]
+		},
+		{
+			"Name": "/Game/Core/World/Textures/Terrain/sand",
+			"ExportBundleChunkIds": [
+				"cd35a58c5fef668800000001"
 			]
 		},
 		{

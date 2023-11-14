@@ -4,3 +4,7 @@
 
 #include "CoreMinimal.h"
 
+class FTerrestreGameModule final : public FDefaultGameModuleImpl
+{
+	virtual void StartupModule() override;
+};

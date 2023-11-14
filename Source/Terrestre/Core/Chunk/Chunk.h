@@ -5,28 +5,24 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Terrestre/Core/Interfaces/InteractableActor.h"
-#include "RealtimeMeshSimple.h"
+#include "RealtimeMeshActor.h"
 #include "Chunk.generated.h"
 
 
-//#define USE_PROCEDURAL_MESH
 
 struct FRealtimeMeshSimpleMeshData;
 struct FFluidState;
+
 using FMeshData = FRealtimeMeshSimpleMeshData;
-class UBoxComponent;
-class UProceduralMeshComponent;
+
 class URealtimeMeshComponent;
 class URealtimeMeshSimple;
 class FGenerateChunkMeshTask;
 class FBlockPalette;
 
-enum class EDirections;
-
-
 
 UCLASS(Blueprintable)
-class TERRESTRE_API AChunk : public AActor, public IInteractableActor
+class TERRESTRE_API AChunk : public ARealtimeMeshActor, public IInteractableActor
 {
 	GENERATED_BODY()
 	
@@ -37,36 +33,40 @@ public:
 	friend class FGenerateChunkMeshTask;
 	friend class AChunkManager;
 
+	//* STATIC MEMBERS *//
+	
 	//* Size in regular blocks
 	static inline constexpr uint8 Size = 16u;
 	static inline constexpr uint32 SizeSquared = Size * Size;
 	static inline constexpr uint32 Volume = SizeSquared * Size;
 	
 	//* Size of regular block
-	static inline FVector VoxelSize{ 100.0, 100.0, 100.0 };
+	static inline FVector VoxelSize { 100.0, 100.0, 100.0 };
 	static inline FIntVector VoxelIntSize{ VoxelSize };
 	//* Chunk size scaled by unreal units 
 	static inline FVector SizeScaled = VoxelSize * Size;
 	
+	static inline FRealtimeMeshSectionConfig BlockSectionConfig; 
+	static inline FRealtimeMeshSectionConfig WaterSectionConfig;
+	
+	static inline FRealtimeMeshLODKey MeshLODKey;
 
+	//******************//
 
 	UFUNCTION(BlueprintCallable, Category = "Chunk")
 	FBlockState GetBlockAtLocalPosition(const FIntVector localPos) const;
-	UFUNCTION(BlueprintCallable, Category = "Chunk")
+
+	UFUNCTION(BlueprintPure, Category = "Chunk")
 	bool IsEmpty() const;
+
 	UFUNCTION(BlueprintCallable, Category = "Chunk")
 	bool ModifyBlockAtLocalPosition(const FIntVector localPos, const FBlockState& newBlock, bool bRequestMeshUpdate = true);
 
+	UFUNCTION(BlueprintCallable, Category = "Chunk")
+	AChunk* GetNeighbourChunk(EDirections direction) const;
 
-	
-	/* Checks if give location is within chunk bounds*/
-	UFUNCTION(BlueprintPure, CAtegory = "Chunk")
-	bool IsInsideBounds(FVector inWorldLocation);
-
-	bool MarkMeshDirty();
-	
+	virtual void OnGenerateMesh_Implementation() override;
 protected:
-	
 	
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -77,64 +77,65 @@ protected:
 
 	virtual FName OnVisibleByCharacter_Implementation(ABaseCharacter* visibleBy, const FHitResult& traceResult) override;
 
-	virtual bool OnLeftMouseButton_Implementation(ABaseCharacter* clickedBy, const FHitResult& traceResult, int64 heldItemID) override;
+	virtual bool OnLeftMouseButton_Implementation(ABaseCharacter* clickedBy, const FHitResult& traceResult, int32 heldItemID) override;
 	
-	virtual bool OnRightMouseButton_Implementation(ABaseCharacter* clickedBy, const FHitResult& traceResult, int64 heldItemID) override;
+	virtual bool OnRightMouseButton_Implementation(ABaseCharacter* clickedBy, const FHitResult& traceResult, int32 heldItemID) override;
+
+	bool MarkMeshDirty();
+
+	bool SweepTestForVisibility(TArray<FHitResult>& sweepResult, FVector startLocation);
 private:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	std::atomic<bool> bPendingDestroy;
+	bool bPendingDestroy;
 
-	std::atomic<bool> bReadyToDestroy;
+	bool bReadyToDestroy;
 
-	std::atomic<bool> bMeshingTaskDone;
+	bool bBlockMeshCreated;
 
-	std::atomic<bool> bBlockMeshCreated;
-
-	std::atomic<bool> bMeshReady;
+	bool bFluidMeshCreated;
+		
+	bool bMeshReady;
 
 	bool bMeshDirty;
 
-	bool bFluidMeshCreated;
-	
+	bool bMeshingTaskDone;
+
+	FAsyncTask<FGenerateChunkMeshTask>* MeshingTask;
+
 	/* Get Chunk's block data stored in a form of indexed palette, the data is owned by chunk manager */
 	FBlockPalette* GetBlockPalette() const;
 
 	/* Get Chunk's fluid data stored in an array, the data is owned by chunk manager */
-	//TArray<FFluidState, TInlineAllocator<AChunk::Volume>>* GetFluidStates() const;
+	//TArray<FFluidState, TInlineAllocator<AChunk::Volume>>* GetFluidStates() const; // TODO
 
 	UFUNCTION()
 	void CreateMeshAsync();
 
 	void MarkMeshReady();
 
+	UFUNCTION()		// * Always executes on the game thread
+	void ApplyMesh();
+
+	void ResetMesh();
+
 	void CancelMeshingTask();
-
-	FAsyncTask<FGenerateChunkMeshTask>* meshingTask;
-
-	UPROPERTY(Category = "Realtime Mesh", VisibleAnywhere, BlueprintReadOnly, meta = (ExposeFunctionCategories = "Mesh,Rendering,Physics,Components|StaticMesh", AllowPrivateAccess = "true"))
-	TObjectPtr<URealtimeMeshComponent> RealtimeMeshComponent;
-
-	FRealtimeMeshSectionKey blockMeshSectionKey;
-
-	FRealtimeMeshSectionKey fluidMeshSectionKey;
 	
 	UPROPERTY()
-	URealtimeMeshSimple* realtimeMesh;
+	FRealtimeMeshSectionKey BlockMeshSectionKey;
 
-	bool SweepTestForVisibility(TArray<FHitResult>& sweepResult, FVector startLocation);
+	UPROPERTY()
+	FRealtimeMeshSectionKey WaterMeshSectionKey;
 
-	AChunk* GetNeighbourChunk(EDirections direction) const;
-	
+	UPROPERTY()
+	TObjectPtr<URealtimeMeshSimple> RealtimeMesh;
+
 	UPROPERTY(EditAnywhere)
 	UMaterialInterface* BlockMaterial;
 
 	UPROPERTY(EditAnywhere)
 	UMaterialInterface* WaterMaterial;
 	
-	UFUNCTION()		// * Always executes on the game thread
-	void ApplyMesh();
-	
-	void ClearMeshSection(int32 sectionNum);
+
 };

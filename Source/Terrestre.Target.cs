@@ -13,7 +13,7 @@ public class TerrestreTarget : TargetRules
 		ExtraModuleNames.AddRange( new string[] { "Terrestre" } );
 
         //BuildEnvironment = TargetBuildEnvironment.Unique;
-		bOverrideBuildEnvironment = true;
-        bUseLoggingInShipping = true;
+		//bOverrideBuildEnvironment = true;
+        //bUseLoggingInShipping = true;
     }
 }

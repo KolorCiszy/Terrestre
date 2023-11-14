@@ -1,22 +1,26 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "Async/AsyncWork.h"
+#include "IRegionGen.h"
 #include "Terrestre/Core/Chunk/Storage/ChunkRegion.h"
 
-class FGenerateChunkRegionDataTask : public FNonAbandonableTask
+
+/* Base class for chunk region generation async tasks */
+class FGenerateChunkRegionDataTask : public IRegionGen
 {
-	friend class FAsyncTask<FGenerateChunkRegionDataTask>;
-	friend class AChunkManager;
 
 public:
 	FGenerateChunkRegionDataTask() = delete;
-	FGenerateChunkRegionDataTask(FIntVector ID) : regionID{ ID } {}
-private:
-	FIntVector regionID;
-	FChunkRegion newRegion;
-	void DoWork();
+	FGenerateChunkRegionDataTask(FIntVector ID) : bShouldExit{ false }, RegionID{ ID } {};
 
+	FChunkRegion RegionData;
+
+	virtual void DoWork(EQueuedWorkPriority priority) = 0;
+
+	std::atomic<bool> bShouldExit;
+
+	virtual ~FGenerateChunkRegionDataTask() {};
+protected:
+	const FIntVector RegionID;
 	
-	
-	FORCEINLINE TStatId GetStatId() const { RETURN_QUICK_DECLARE_CYCLE_STAT(FGenerateChunkRegionDataTask, STATGROUP_ThreadPoolAsyncTasks); }
 };
