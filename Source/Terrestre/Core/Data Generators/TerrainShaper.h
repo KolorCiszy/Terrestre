@@ -198,14 +198,14 @@ public:
 	}
 	
 	 
-	UE_NODISCARD float FORCEINLINE GetInitialDensityAtXYZ_Native(double worldXPos, double worldYPos, double worldZPos)
+	float FORCEINLINE GetInitialDensityAtXYZ_Native(double worldXPos, double worldYPos, double worldZPos)
 	{
 		float densityOffset = DensityNoise1->GetNoise2D(worldXPos, worldYPos);
 		float initialDensity = DensityNoise0->GetNoise3D(worldXPos, worldYPos, worldZPos) * 1.65224234f + densityOffset;
 		initialDensity < 0 ? initialDensity *= 0.00946 : initialDensity *=  0.0066f;
 		return initialDensity;
 	}
-	UE_NODISCARD float FORCEINLINE GetFinalDensity_Native(float initialDensity, double worldZPos, int16 TH, float SF)
+	float FORCEINLINE GetFinalDensity_Native(float initialDensity, double worldZPos, int16 TH, float SF)
 	{
 		int32 heightDiff = TH - worldZPos;
 		initialDensity = FMath::Floor(initialDensity * 100.0f) * 0.01f;
@@ -223,7 +223,7 @@ public:
 
 	
 	/* Controls how far inland the terrain is, primary driving the terrain height */
-	UE_NODISCARD float FORCEINLINE GetContinentalnessAtXY_Native(double X, double Y)
+	float FORCEINLINE GetContinentalnessAtXY_Native(double X, double Y)
 	{
 		float weirdness = GetWeirdnessAtXY_Native(X, Y);
 		float output = ContinentalnessNoise0->GetNoise2D(X,Y) * 3.0f + weirdness;
@@ -231,7 +231,7 @@ public:
 		return output;
 	}
 	/* Controls how flat the terrain is in general */
-	UE_NODISCARD float FORCEINLINE GetErosionAtXY_Native(double X, double Y)
+	float FORCEINLINE GetErosionAtXY_Native(double X, double Y)
 	{
 		float output = ErosionNoise->GetNoise2D(X, Y) * 3.0f; 
 		output = FMath::Floor(output * 100.0f) * 0.001f;
@@ -239,13 +239,13 @@ public:
 	}
 
 	/* Adds random peak and valleys when output value is high or low enough */
-	UE_NODISCARD float FORCEINLINE GetPVAtXY_Native(double X, double Y)
+	float FORCEINLINE GetPVAtXY_Native(double X, double Y)
 	{
 		float output = PVNoise->GetNoise2D(X, Y) * -1.5f;
 		output = FMath::Floor(output * 100.0f) * 0.001f;
 		return output;
 	}
-	UE_NODISCARD float FORCEINLINE GetWeirdnessAtXY_Native(double X, double Y)
+	float FORCEINLINE GetWeirdnessAtXY_Native(double X, double Y)
 	{
 		float output = WeirdnessNoise->GetNoise2D(X, Y);
 		output = FMath::Floor(output * 100.0f) * 0.001f;

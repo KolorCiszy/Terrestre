@@ -9,6 +9,17 @@
 
 #include "Terrestre/Core/Chunk/Storage/BlockPalette.h"
 
+FGenerateChunkMeshTask::FGenerateChunkMeshTask(TObjectPtr<AChunk> chunkOwner)
+{
+	chunk = chunkOwner;
+	blockStateMeshData = MakeUnique<FMeshData>();
+	fluidStateMeshData = MakeUnique<FMeshData>();
+	ResetData();
+	
+	
+
+}
+
 void FGenerateChunkMeshTask::ResetData()
 {
 	forwardChunkDataValid = false;
@@ -86,6 +97,18 @@ void FGenerateChunkMeshTask::GenerateBlockStateMesh()
 		return;
 	}
 
+
+	TRealtimeMeshBuilderLocal<uint16, FPackedNormal, FVector2DHalf, 1, uint16> BlockMeshBuilder(*blockStateMeshData);
+	
+
+	// here we go ahead and enable all the basic mesh data parts
+	BlockMeshBuilder.EnableTangents();
+	BlockMeshBuilder.EnableTexCoords();
+	BlockMeshBuilder.EnableColors();
+	BlockMeshBuilder.EnablePolyGroups();
+	
+
+
 	/* Iterate over chunk's blocks */
 	for (int16 x{}; x < AChunk::Size; x++)
 	{
@@ -132,7 +155,7 @@ void FGenerateChunkMeshTask::GenerateBlockStateMesh()
 					if (runLength > 0)
 					{
 						// Create a quad and write it directly to the buffer
-						CreateQuad(FVector(x, y, z + runLength) * AChunk::VoxelSize,
+						CreateQuad(&BlockMeshBuilder, FVector(x, y, z + runLength) * AChunk::VoxelSize,
 							FVector(x1, y, z + runLength) * AChunk::VoxelSize,
 							FVector(x, y, z) * AChunk::VoxelSize,
 							FVector(x1, y, z) * AChunk::VoxelSize,
@@ -160,7 +183,7 @@ void FGenerateChunkMeshTask::GenerateBlockStateMesh()
 					}
 					if (runLength > 0)
 					{
-						CreateQuad(FVector(x1, y1, z + runLength) * AChunk::VoxelSize,
+						CreateQuad(&BlockMeshBuilder, FVector(x1, y1, z + runLength) * AChunk::VoxelSize,
 							FVector(x, y1, z + runLength) * AChunk::VoxelSize,
 							FVector(x1, y1, z) * AChunk::VoxelSize,
 							FVector(x, y1, z) * AChunk::VoxelSize,
@@ -187,7 +210,7 @@ void FGenerateChunkMeshTask::GenerateBlockStateMesh()
 					}
 					if (runLength > 0)
 					{
-						CreateQuad(FVector(x1, y, z + runLength) * AChunk::VoxelSize,
+						CreateQuad(&BlockMeshBuilder, FVector(x1, y, z + runLength) * AChunk::VoxelSize,
 							FVector(x1, y1, z + runLength) * AChunk::VoxelSize,
 							FVector(x1, y, z) * AChunk::VoxelSize,
 							FVector(x1, y1, z) * AChunk::VoxelSize,
@@ -215,7 +238,7 @@ void FGenerateChunkMeshTask::GenerateBlockStateMesh()
 					}
 					if (runLength > 0)
 					{
-						CreateQuad(FVector(x, y1, runLength + z) * AChunk::VoxelSize,
+						CreateQuad(&BlockMeshBuilder, FVector(x, y1, runLength + z) * AChunk::VoxelSize,
 							FVector(x, y, z + runLength) * AChunk::VoxelSize,
 							FVector(x, y1, z) * AChunk::VoxelSize,
 							FVector(x, y, z) * AChunk::VoxelSize,
@@ -243,7 +266,7 @@ void FGenerateChunkMeshTask::GenerateBlockStateMesh()
 					}
 					if (runLength > 0)
 					{
-						CreateQuad(FVector(x, y, z1) * AChunk::VoxelSize,
+						CreateQuad(&BlockMeshBuilder, FVector(x, y, z1) * AChunk::VoxelSize,
 							FVector(x, y1, z1) * AChunk::VoxelSize,
 							FVector(x + runLength, y, z1) * AChunk::VoxelSize, // bylo x + runlength
 							FVector(x + runLength, y1, z1) * AChunk::VoxelSize, // bylo x + runlength
@@ -273,7 +296,7 @@ void FGenerateChunkMeshTask::GenerateBlockStateMesh()
 
 					if (runLength > 0)
 					{
-						CreateQuad(FVector(x + runLength, y, z) * AChunk::VoxelSize,
+						CreateQuad(&BlockMeshBuilder, FVector(x + runLength, y, z) * AChunk::VoxelSize,
 							FVector(x + runLength, y1, z) * AChunk::VoxelSize,
 							FVector(x, y, z) * AChunk::VoxelSize,
 							FVector(x, y1, z) * AChunk::VoxelSize,
@@ -332,6 +355,11 @@ void FGenerateChunkMeshTask::GenerateWaterMesh()
 	
 	
 	*/
+	TRealtimeMeshBuilderLocal<uint16, FPackedNormal, FVector2DHalf, 1, uint16> FluidMeshBuilder(*fluidStateMeshData);
+	FluidMeshBuilder.EnableTangents();
+	FluidMeshBuilder.EnableTexCoords();
+	FluidMeshBuilder.EnablePolyGroups();
+
 	FChunkHelper chunkHelper;
 	chunkHelper.SetSize(AChunk::Volume);
 
@@ -383,7 +411,7 @@ void FGenerateChunkMeshTask::GenerateWaterMesh()
 					if (runLength > 0)
 					{
 						// Create a quad and write it directly to the buffer
-						CreateQuad(FVector(x, y, z + runLength) * AChunk::VoxelSize,
+						CreateQuad(&FluidMeshBuilder, FVector(x, y, z + runLength) * AChunk::VoxelSize,
 							FVector(x1, y, z + runLength) * AChunk::VoxelSize,
 							FVector(x, y, z) * AChunk::VoxelSize,
 							FVector(x1, y, z) * AChunk::VoxelSize,
@@ -411,7 +439,7 @@ void FGenerateChunkMeshTask::GenerateWaterMesh()
 					}
 					if (runLength > 0)
 					{
-						CreateQuad(FVector(x1, y1, z + runLength) * AChunk::VoxelSize,
+						CreateQuad(&FluidMeshBuilder, FVector(x1, y1, z + runLength) * AChunk::VoxelSize,
 							FVector(x, y1, z + runLength) * AChunk::VoxelSize,
 							FVector(x1, y1, z) * AChunk::VoxelSize,
 							FVector(x, y1, z) * AChunk::VoxelSize,
@@ -440,7 +468,7 @@ void FGenerateChunkMeshTask::GenerateWaterMesh()
 					}
 					if (runLength > 0)
 					{
-						CreateQuad(FVector(x1, y, z + runLength) * AChunk::VoxelSize,
+						CreateQuad(&FluidMeshBuilder, FVector(x1, y, z + runLength) * AChunk::VoxelSize,
 							FVector(x1, y1, z + runLength) * AChunk::VoxelSize,
 							FVector(x1, y, z) * AChunk::VoxelSize,
 							FVector(x1, y1, z) * AChunk::VoxelSize,
@@ -469,7 +497,7 @@ void FGenerateChunkMeshTask::GenerateWaterMesh()
 					}
 					if (runLength > 0)
 					{
-						CreateQuad(FVector(x, y1, runLength + z) * AChunk::VoxelSize,
+						CreateQuad(&FluidMeshBuilder, FVector(x, y1, runLength + z) * AChunk::VoxelSize,
 							FVector(x, y, z + runLength) * AChunk::VoxelSize,
 							FVector(x, y1, z) * AChunk::VoxelSize,
 							FVector(x, y, z) * AChunk::VoxelSize,
@@ -499,7 +527,7 @@ void FGenerateChunkMeshTask::GenerateWaterMesh()
 					}
 					if (runLength > 0)
 					{
-						CreateQuad(FVector(x, y, z1) * AChunk::VoxelSize,
+						CreateQuad(&FluidMeshBuilder, FVector(x, y, z1) * AChunk::VoxelSize,
 							FVector(x, y1, z1) * AChunk::VoxelSize,
 							FVector(x + runLength, y, z1) * AChunk::VoxelSize, // bylo x + runlength
 							FVector(x + runLength, y1, z1) * AChunk::VoxelSize, // bylo x + runlength
@@ -531,7 +559,7 @@ void FGenerateChunkMeshTask::GenerateWaterMesh()
 
 					if (runLength > 0)
 					{
-						CreateQuad(FVector(x + runLength, y, z) * AChunk::VoxelSize,
+						CreateQuad(&FluidMeshBuilder, FVector(x + runLength, y, z) * AChunk::VoxelSize,
 							FVector(x + runLength, y1, z) * AChunk::VoxelSize,
 							FVector(x, y, z) * AChunk::VoxelSize,
 							FVector(x, y1, z) * AChunk::VoxelSize,
@@ -725,79 +753,126 @@ bool FGenerateChunkMeshTask::IsVisibleFace(FIntVector localPos, EDirections dire
 	}
 	return false;
 }
-void FGenerateChunkMeshTask::CreateQuad(FVector tlv, FVector trv, FVector blv, FVector brv, FVector norm, const FBlockState& block)
+void FGenerateChunkMeshTask::CreateQuad(TRealtimeMeshBuilderLocal<uint16, FPackedNormal, FVector2DHalf, 1, uint16>* MeshBuilder, FVector tlv, FVector trv, FVector blv, FVector brv, FVector norm, const FBlockState& block)
 {
-
+	
 	if (BlockData::GetBlockMeshType(block.blockID) == EBlockMeshType::NONE)
 	{
 		return;
 	}
-	int32 nextIndex = blockStateMeshData->Positions.Num();
-	blockStateMeshData->Positions.Append({ tlv, trv, blv, brv });
 
-	blockStateMeshData->Triangles.Append({ nextIndex + 1, nextIndex + 3, nextIndex, nextIndex + 2, nextIndex, nextIndex + 3 });
+	FVector3f tlv_normalized = FVector3f{ tlv } / AChunk::VoxelSizeOneAxis;
+	FVector3f blv_normalized = FVector3f{ blv } / AChunk::VoxelSizeOneAxis;
+	FVector3f brv_normalized = FVector3f{ brv } / AChunk::VoxelSizeOneAxis;
+	FVector3f trv_normalized = FVector3f{ trv } / AChunk::VoxelSizeOneAxis;
 
-	blockStateMeshData->Normals.Append({ norm,norm,norm,norm });
+	FVector2f uvCoords[4];
 
-	tlv /= 100;
-	blv /= 100;
-	brv /= 100;
-	trv /= 100;
-	EDirections quadDirection{};
 	if (norm == FVector::DownVector || norm == FVector::UpVector)
 	{
-		blockStateMeshData->UV0.Append({
-		FVector2D{blv.X, blv.Y}, FVector2D{brv.X, brv.Y}, FVector2D{tlv.X, tlv.Y}, FVector2D{trv.X, trv.Y}
-			});
-		if (FMath::TruncToInt32(norm.Z) == 1)
-		{
-			quadDirection = EDirections::Up;
-		}
-		else
-		{
-			quadDirection = EDirections::Down;
-		}
-
+		uvCoords[0] = FVector2f{ blv_normalized.X, blv_normalized.Y };
+		uvCoords[1] = FVector2f{ brv_normalized.X, brv_normalized.Y };
+		uvCoords[2] = FVector2f{ tlv_normalized.X, tlv_normalized.Y };
+		uvCoords[3] = FVector2f{ trv_normalized.X, trv_normalized.Y};
 	}
 	else if (norm == FVector::ForwardVector || norm == FVector::BackwardVector)
 	{
+		uvCoords[0] = FVector2f{ blv_normalized.Y, blv_normalized.Z };
+		uvCoords[1] = FVector2f{ brv_normalized.Y, brv_normalized.Z };
+		uvCoords[2] = FVector2f{ tlv_normalized.Y, tlv_normalized.Z };
+		uvCoords[3] = FVector2f{ trv_normalized.Y, trv_normalized.Z };
+		/*
 		blockStateMeshData->UV0.Append({
 		FVector2D{blv.Y, blv.Z}, FVector2D{brv.Y, brv.Z}, FVector2D{tlv.Y, tlv.Z}, FVector2D{trv.Y, trv.Z}
 			});
-		if (FMath::TruncToInt32(norm.X) == 1)
-		{
-			quadDirection = EDirections::Forward;
-		}
-		else
-		{
-			quadDirection = EDirections::Backward;
-		}
+			*/
 	}
 	else
 	{
+		uvCoords[0] = FVector2f{ blv_normalized.X, blv_normalized.Z };
+		uvCoords[1] = FVector2f{ brv_normalized.X, brv_normalized.Z };
+		uvCoords[2] = FVector2f{ tlv_normalized.X, tlv_normalized.Z };
+		uvCoords[3] = FVector2f{ trv_normalized.X, trv_normalized.Z };
+		/*
 		blockStateMeshData->UV0.Append({
 		FVector2D{blv.X, blv.Z}, FVector2D{brv.X, brv.Z}, FVector2D{tlv.X, tlv.Z}, FVector2D{trv.X, trv.Z}
 			});
-		if (FMath::TruncToInt32(norm.Y) == 1)
-		{
-			quadDirection = EDirections::Right;
-		}
-		else
-		{
-			quadDirection = EDirections::Left;
-		}
+			*/
 	}
-	FColor textureIndex{ 0,0,0, static_cast<uint8>(BlockData::GetBlockTextureIndex(block.blockID, quadDirection)) };
-	blockStateMeshData->Colors.Append({ textureIndex, textureIndex, textureIndex, textureIndex });
 
+	FColor textureIndex{ 0,0,0, static_cast<uint8>(BlockData::GetBlockTextureIndex(block.blockID, DirectionFromNormalVector(norm))) };
+
+	auto nextIndex = MeshBuilder->NumVertices();
+
+	MeshBuilder->AddVertex(FVector3f{ tlv }).SetNormalAndTangent(FVector3f{ norm }, FVector3f::ForwardVector).SetColor(textureIndex).SetTexCoord(uvCoords[0]);
+	MeshBuilder->AddVertex(FVector3f{ trv }).SetNormalAndTangent(FVector3f{ norm }, FVector3f::ForwardVector).SetColor(textureIndex).SetTexCoord(uvCoords[1]);
+	MeshBuilder->AddVertex(FVector3f{ blv }).SetNormalAndTangent(FVector3f{ norm }, FVector3f::ForwardVector).SetColor(textureIndex).SetTexCoord(uvCoords[2]);
+	MeshBuilder->AddVertex(FVector3f{ brv }).SetNormalAndTangent(FVector3f{ norm }, FVector3f::ForwardVector).SetColor(textureIndex).SetTexCoord(uvCoords[3]);
+
+	
+	MeshBuilder->AddTriangle(nextIndex + 1, nextIndex + 3, nextIndex, 0);
+	MeshBuilder->AddTriangle(nextIndex + 2, nextIndex, nextIndex + 3, 0);
+
+	
 };
 
-void FGenerateChunkMeshTask::CreateQuad(FVector tlv, FVector trv, FVector blv, FVector brv, FVector norm, const FFluidState& fluid)
+void FGenerateChunkMeshTask::CreateQuad(TRealtimeMeshBuilderLocal<uint16, FPackedNormal, FVector2DHalf, 1, uint16>* MeshBuilder, FVector tlv, FVector trv, FVector blv, FVector brv, FVector norm, const FFluidState& fluid)
 {
 	switch (fluid.fluidID)
 	{
 	case 1:
+	{
+		FVector3f tlv_normalized = FVector3f{ tlv } / AChunk::VoxelSizeOneAxis;
+		FVector3f blv_normalized = FVector3f{ blv } / AChunk::VoxelSizeOneAxis;
+		FVector3f brv_normalized = FVector3f{ brv } / AChunk::VoxelSizeOneAxis;
+		FVector3f trv_normalized = FVector3f{ trv } / AChunk::VoxelSizeOneAxis;
+
+		FVector2f uvCoords[4];
+
+		if (norm == FVector::DownVector || norm == FVector::UpVector)
 		{
+			uvCoords[0] = FVector2f{ blv_normalized.X, blv_normalized.Y };
+			uvCoords[1] = FVector2f{ brv_normalized.X, brv_normalized.Y };
+			uvCoords[2] = FVector2f{ tlv_normalized.X, tlv_normalized.Y };
+			uvCoords[3] = FVector2f{ trv_normalized.X, trv_normalized.Y };
+		}
+		else if (norm == FVector::ForwardVector || norm == FVector::BackwardVector)
+		{
+			uvCoords[0] = FVector2f{ blv_normalized.Y, blv_normalized.Z };
+			uvCoords[1] = FVector2f{ brv_normalized.Y, brv_normalized.Z };
+			uvCoords[2] = FVector2f{ tlv_normalized.Y, tlv_normalized.Z };
+			uvCoords[3] = FVector2f{ trv_normalized.Y, trv_normalized.Z };
+			/*
+			blockStateMeshData->UV0.Append({
+			FVector2D{blv.Y, blv.Z}, FVector2D{brv.Y, brv.Z}, FVector2D{tlv.Y, tlv.Z}, FVector2D{trv.Y, trv.Z}
+				});
+				*/
+		}
+		else
+		{
+			uvCoords[0] = FVector2f{ blv_normalized.X, blv_normalized.Z };
+			uvCoords[1] = FVector2f{ brv_normalized.X, brv_normalized.Z };
+			uvCoords[2] = FVector2f{ tlv_normalized.X, tlv_normalized.Z };
+			uvCoords[3] = FVector2f{ trv_normalized.X, trv_normalized.Z };
+			/*
+			blockStateMeshData->UV0.Append({
+			FVector2D{blv.X, blv.Z}, FVector2D{brv.X, brv.Z}, FVector2D{tlv.X, tlv.Z}, FVector2D{trv.X, trv.Z}
+				});
+				*/
+		}
+
+		//FColor textureIndex{ 0,0,0, static_cast<uint8>(FFluidData::GetBlockTextureIndex(block.blockID, DirectionFromNormalVector(norm))) };
+		auto nextIndex = MeshBuilder->NumVertices();
+
+		MeshBuilder->AddVertex(FVector3f{ tlv }).SetNormalAndTangent(FVector3f{ norm }, FVector3f{1,0,0}).SetTexCoord(uvCoords[0]);
+		MeshBuilder->AddVertex(FVector3f{ trv }).SetNormalAndTangent(FVector3f{ norm }, FVector3f{1,0,0}).SetTexCoord(uvCoords[1]);
+		MeshBuilder->AddVertex(FVector3f{ blv }).SetNormalAndTangent(FVector3f{ norm }, FVector3f{1,0,0}).SetTexCoord(uvCoords[2]);
+		MeshBuilder->AddVertex(FVector3f{ brv }).SetNormalAndTangent(FVector3f{ norm }, FVector3f{1,0,0}).SetTexCoord(uvCoords[3]);
+
+		
+		MeshBuilder->AddTriangle(nextIndex + 1, nextIndex + 3, nextIndex, 0); // ADD polygroups
+		MeshBuilder->AddTriangle(nextIndex + 2, nextIndex, nextIndex + 3, 0);
+		/*
 			int32 nextIndex = fluidStateMeshData->Positions.Num();
 
 			fluidStateMeshData->Positions.Append({ tlv, trv, blv, brv });
@@ -855,9 +930,10 @@ void FGenerateChunkMeshTask::CreateQuad(FVector tlv, FVector trv, FVector blv, F
 				}
 			}
 		}
-	
+	*/
 		break;
 	}
-
+	}
 }
+
 FGenerateChunkMeshTask::~FGenerateChunkMeshTask() = default;

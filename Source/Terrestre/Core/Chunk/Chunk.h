@@ -10,10 +10,8 @@
 
 
 
-struct FRealtimeMeshSimpleMeshData;
 struct FFluidState;
 
-using FMeshData = FRealtimeMeshSimpleMeshData;
 
 class URealtimeMeshComponent;
 class URealtimeMeshSimple;
@@ -42,6 +40,7 @@ public:
 	
 	//* Size of regular block
 	static inline FVector VoxelSize { 100.0, 100.0, 100.0 };
+	static inline float VoxelSizeOneAxis = VoxelSize.X;
 	static inline FIntVector VoxelIntSize{ VoxelSize };
 	//* Chunk size scaled by unreal units 
 	static inline FVector SizeScaled = VoxelSize * Size;
@@ -49,7 +48,9 @@ public:
 	static inline FRealtimeMeshSectionConfig BlockSectionConfig; 
 	static inline FRealtimeMeshSectionConfig WaterSectionConfig;
 	
-	static inline FRealtimeMeshLODKey MeshLODKey;
+	FRealtimeMeshSectionGroupKey MeshGroupKey;
+
+	//static inline FRealtimeMeshLODKey MeshLODKey;
 
 	//******************//
 

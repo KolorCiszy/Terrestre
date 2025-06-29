@@ -12,10 +12,6 @@
 #include "Async/GenerateChunkMeshTask.h"
 
 
-
-
-using FMeshData = FRealtimeMeshSimpleMeshData;
-
 // Sets default values
 AChunk::AChunk()
 {
@@ -34,7 +30,8 @@ AChunk::AChunk()
 	WaterSectionConfig.DrawType = ERealtimeMeshSectionDrawType::Dynamic;
 	WaterSectionConfig.MaterialSlot = 1;
 	WaterSectionConfig.bCastsShadow = false;
-	MeshLODKey = 0;
+	//MeshLODKey = 0;
+	MeshGroupKey = FRealtimeMeshSectionGroupKey::Create(0, 0);
 }
 
 void AChunk::OnGenerateMesh_Implementation()
@@ -82,15 +79,15 @@ void AChunk::ResetMesh()
 {
 	if (bBlockMeshCreated)
 	{
-		RealtimeMesh->RemoveSection(BlockMeshSectionKey);
+		RealtimeMesh->RemoveSectionGroup(MeshGroupKey);
 		bBlockMeshCreated = false;
 	}
 	if (bFluidMeshCreated)
 	{
-		RealtimeMesh->RemoveSection(WaterMeshSectionKey);
+		RealtimeMesh->RemoveSectionGroup(WaterMeshSectionKey);
 		bFluidMeshCreated = false;
 	}
-	RealtimeMesh->UpdateCollision(true);
+	//RealtimeMesh->Section(true);
 }
 void AChunk::MarkMeshReady()
 {
@@ -105,42 +102,47 @@ void AChunk::MarkMeshReady()
 
 void AChunk::ApplyMesh()
 {
-	if (MeshingTask->IsDone())
+ 	if (MeshingTask->IsDone())
 	{
 		bMeshingTaskDone = true;
 		FMeshData& blockMeshData = *MeshingTask->GetTask().blockStateMeshData;
 		FMeshData& fluidMeshData = *MeshingTask->GetTask().fluidStateMeshData;
-		
-		if (blockMeshData.Positions.Num() > 3)
+
+		auto VertexStream = blockMeshData.Find(FRealtimeMeshStreamKey(ERealtimeMeshStreamType::Vertex, TEXT("Position")));
+		if (VertexStream && !VertexStream->IsEmpty())
 		{
-			if (bBlockMeshCreated)
-			{
-				RealtimeMesh->UpdateSectionMesh(BlockMeshSectionKey, blockMeshData);
-			}
-			else
-			{
-				BlockMeshSectionKey = RealtimeMesh->CreateMeshSection(MeshLODKey, BlockSectionConfig, blockMeshData, true);
-				bBlockMeshCreated = true;
-			}
+			
+			const FRealtimeMeshSectionKey PolyGroup0SectionKey = FRealtimeMeshSectionKey::CreateForPolyGroup(MeshGroupKey, 0);
+
+			// Now we create the section group, since the stream set has polygroups, this will create the sections as well
+			RealtimeMesh->CreateSectionGroup(MeshGroupKey, blockMeshData);
+
+			// Update the configuration of both the polygroup sections.
+			RealtimeMesh->UpdateSectionConfig(PolyGroup0SectionKey, BlockSectionConfig, true);
+
+			bBlockMeshCreated = true;
+			
 		}
 		else if(bBlockMeshCreated)
 		{
-			RealtimeMesh->RemoveSection(BlockMeshSectionKey);
+			RealtimeMesh->RemoveSectionGroup(MeshGroupKey);
 			bBlockMeshCreated = false;
 		}
-
-		if (fluidMeshData.Positions.Num() > 3)
+		VertexStream = fluidMeshData.Find(FRealtimeMeshStreamKey(ERealtimeMeshStreamType::Vertex, TEXT("Position")));
+		
+		
+		if (VertexStream && !VertexStream->IsEmpty())
 		{
+			
+			const FRealtimeMeshSectionKey PolyGroup1SectionKey = FRealtimeMeshSectionKey::CreateForPolyGroup(MeshGroupKey, 1);
 
-			if (bFluidMeshCreated)
-			{
-				RealtimeMesh->UpdateSectionMesh(WaterMeshSectionKey, fluidMeshData);
-			}
-			else
-			{
-				WaterMeshSectionKey = RealtimeMesh->CreateMeshSection(MeshLODKey, WaterSectionConfig, fluidMeshData);
-				bFluidMeshCreated = true;
-			}
+			// Now we create the section group, since the stream set has polygroups, this will create the sections as well
+			//RealtimeMesh->CreateSectionGroup(MeshGroupKey, fluidMeshData);
+			
+			// Update the configuration of both the polygroup sections.
+			//RealtimeMesh->UpdateSectionConfig(PolyGroup1SectionKey, WaterSectionConfig, false);
+			//bFluidMeshCreated = true;
+			
 		}
 		else if(bFluidMeshCreated)
 		{

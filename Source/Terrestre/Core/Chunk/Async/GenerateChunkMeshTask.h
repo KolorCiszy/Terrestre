@@ -6,9 +6,9 @@
 #include "Terrestre/Core/Chunk/Chunk.h"
 
 
-enum class EDirections;
 
-using FMeshData = FRealtimeMeshSimpleMeshData;
+
+using FMeshData = FRealtimeMeshStreamSet;
 
 struct FChunkHelper;
 
@@ -22,19 +22,14 @@ class FGenerateChunkMeshTask : public FNonAbandonableTask
 public: 
 	FGenerateChunkMeshTask();
 	~FGenerateChunkMeshTask();
-	FGenerateChunkMeshTask(TObjectPtr<AChunk> chunkOwner)
-	{
-		chunk = chunkOwner;
-		blockStateMeshData = MakeUnique<FMeshData>();
-		fluidStateMeshData = MakeUnique<FMeshData>();
-		ResetData();
-	};
+	FGenerateChunkMeshTask(TObjectPtr<AChunk> chunkOwner);
+	
 	//* the chunk that owns this task generation
 	TObjectPtr<AChunk> chunk;
 
 	/* mesh data for blocks this task will generate */
 	TUniquePtr<FMeshData> blockStateMeshData;
-
+	
 	/* mesh data for blocks this task will generate */
 	TUniquePtr<FMeshData> fluidStateMeshData;
 
@@ -85,19 +80,15 @@ private:
 	* trv - top right vertex
 	* norm - quad normal
 	*/
-	void CreateQuad(FVector tlv, FVector trv, FVector blv, FVector brv, FVector norm, const FBlockState& block);
+	void CreateQuad(TRealtimeMeshBuilderLocal<uint16, FPackedNormal, FVector2DHalf, 1, uint16>* MeshBuilder, FVector tlv, FVector trv, FVector blv, FVector brv, FVector norm, const FBlockState& block);
 
-	void CreateQuad(FVector tlv, FVector trv, FVector blv, FVector brv, FVector norm, const FFluidState& fluid);
+	void CreateQuad(TRealtimeMeshBuilderLocal<uint16, FPackedNormal, FVector2DHalf, 1, uint16>* MeshBuilder, FVector tlv, FVector trv, FVector blv, FVector brv, FVector norm, const FFluidState& fluid);
 
 	FORCEINLINE TStatId GetStatId() const { RETURN_QUICK_DECLARE_CYCLE_STAT(FGenerateChunkMeshTask, STATGROUP_ThreadPoolAsyncTasks); }
+
 	void ClearMeshData(FMeshData& meshdata)
 	{
-		meshdata.Positions.Empty();
-		meshdata.Tangents.Empty();
-		meshdata.Colors.Empty();
-		meshdata.Triangles.Empty();
-		meshdata.UV0.Empty();
-		meshdata.Normals.Empty();
+		meshdata.Empty();
 	}
 };
 
