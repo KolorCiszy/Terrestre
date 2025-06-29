@@ -1,46 +1,31 @@
 #pragma once
 #include "CoreMinimal.h"
-#include "RealtimeMeshSimple.h"
 #include "Terrestre/Core/Chunk/Storage/BlockState.h"
 #include "Terrestre/Core/Chunk/Storage/FluidState.h"
 #include "Terrestre/Core/Chunk/Chunk.h"
-
-
-enum class EDirections;
-
-using FMeshData = FRealtimeMeshSimpleMeshData;
+#include "Terrestre/Core/Chunk/ChunkConstants.h"
+#include "Terrestre/Core/Chunk/Misc/Directions.h"
+#include <Runtime/GeometryFramework/Public/Components/DynamicMeshComponent.h>
 
 struct FChunkHelper;
 
 class FBlockPalette;
 
-
 class FGenerateChunkMeshTask : public FNonAbandonableTask
 {
 	friend class FAsyncTask<FGenerateChunkMeshTask>;
-
+	friend class AChunk;
 public: 
-	FGenerateChunkMeshTask();
+	FGenerateChunkMeshTask() = delete;
 	~FGenerateChunkMeshTask();
-	FGenerateChunkMeshTask(TObjectPtr<AChunk> chunkOwner)
-	{
-		chunk = chunkOwner;
-		blockStateMeshData = MakeUnique<FMeshData>();
-		fluidStateMeshData = MakeUnique<FMeshData>();
-		ResetData();
-	};
-	//* the chunk that owns this task generation
+	FGenerateChunkMeshTask(AChunk* chunkOwner);
+	
+	//* the chunk that owns this task
 	TObjectPtr<AChunk> chunk;
 
-	/* mesh data for blocks this task will generate */
-	TUniquePtr<FMeshData> blockStateMeshData;
+	TSharedPtr<FDynamicMesh3, ESPMode::NotThreadSafe> BlockDynamicMeshData;
 
-	/* mesh data for blocks this task will generate */
-	TUniquePtr<FMeshData> fluidStateMeshData;
-
-
-	
-	void ResetData();
+	TSharedPtr<FDynamicMesh3, ESPMode::NotThreadSafe> FluidDynamicMeshData;
 private: 
 	
 	void DoWork();
@@ -53,30 +38,13 @@ private:
 	
 	bool HasWater(FIntVector localPos, EDirections direction);
 
-	bool forwardChunkDataValid;
-	bool backwardChunkDataValid;
-	bool rightChunkDataValid;
-	bool leftChunkDataValid;
-	bool upChunkDataValid;
-	bool downChunkDataValid;
+	TMap<EDirections, FBlockOpacityData> ChunkOpacityCache;
 
-	TArray<FBlockState, TInlineAllocator<AChunk::Volume>> uncompressedBlocks{};
-	TArray<FBlockState, TInlineAllocator<AChunk::Volume>> uncompressedBlocksF{};
-	TArray<FBlockState, TInlineAllocator<AChunk::Volume>> uncompressedBlocksB{};
-	TArray<FBlockState, TInlineAllocator<AChunk::Volume>> uncompressedBlocksL{};
-	TArray<FBlockState, TInlineAllocator<AChunk::Volume>> uncompressedBlocksR{};
-	TArray<FBlockState, TInlineAllocator<AChunk::Volume>> uncompressedBlocksU{};
-	TArray<FBlockState, TInlineAllocator<AChunk::Volume>> uncompressedBlocksD{};
+	TMap < EDirections, TArray<FFluidState, TInlineAllocator<FChunkConstants::Volume>>> FluidStateCache;
 
-	TArray<FFluidState, TInlineAllocator<AChunk::Volume>> fluidStates;
+	TArray<FBlockState, TInlineAllocator<FChunkConstants::Volume>> UnpackedBlocks;
 
-	TArray<FFluidState, TInlineAllocator<AChunk::Volume>> fluidStatesU;
-	TArray<FFluidState, TInlineAllocator<AChunk::Volume>> fluidStatesD;
-	TArray<FFluidState, TInlineAllocator<AChunk::Volume>> fluidStatesL;
-	TArray<FFluidState, TInlineAllocator<AChunk::Volume>> fluidStatesR;
-	TArray<FFluidState, TInlineAllocator<AChunk::Volume>> fluidStatesF;
-	TArray<FFluidState, TInlineAllocator<AChunk::Volume>> fluidStatesB;
-
+	TArray<FFluidState, TInlineAllocator<FChunkConstants::Volume>> FluidStatesCopy;
 
 	/*
 	* tlv - top left vertex
@@ -90,15 +58,7 @@ private:
 	void CreateQuad(FVector tlv, FVector trv, FVector blv, FVector brv, FVector norm, const FFluidState& fluid);
 
 	FORCEINLINE TStatId GetStatId() const { RETURN_QUICK_DECLARE_CYCLE_STAT(FGenerateChunkMeshTask, STATGROUP_ThreadPoolAsyncTasks); }
-	void ClearMeshData(FMeshData& meshdata)
-	{
-		meshdata.Positions.Empty();
-		meshdata.Tangents.Empty();
-		meshdata.Colors.Empty();
-		meshdata.Triangles.Empty();
-		meshdata.UV0.Empty();
-		meshdata.Normals.Empty();
-	}
+
 };
 
 

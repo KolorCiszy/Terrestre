@@ -68,7 +68,7 @@ struct FBlockData : public FTableRowBase
 	EBlockMeshType MeshType = EBlockMeshType::NONE;
 };
 
-enum class EDirections;
+
 namespace BlockData
 {
 	inline FName const RegistryName = TEXT("BlockData");

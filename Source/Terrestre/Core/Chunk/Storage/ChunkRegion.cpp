@@ -1,7 +1,7 @@
 #include "ChunkRegion.h"
 FChunkProtoRegion::FChunkProtoRegion(FChunkRegion& packedData)
 {
-	ProtoChunkData.Reserve(FChunkRegion::RegionVolume);
+	ProtoChunkData.Reserve(FChunkConstants::RegionVolume);
 	for (auto& chunk : packedData.ChunkData)
 	{
 		FProtoChunkData unpackedData = chunk.Value;
@@ -10,7 +10,7 @@ FChunkProtoRegion::FChunkProtoRegion(FChunkRegion& packedData)
 }
 FChunkProtoRegion& FChunkProtoRegion::operator=(FChunkRegion& packedData)
 {
-	ProtoChunkData.Reserve(FChunkRegion::RegionVolume);
+	ProtoChunkData.Reserve(FChunkConstants::RegionVolume);
 	for (auto& chunk : packedData.ChunkData)
 	{
 		FProtoChunkData unpackedData = chunk.Value;

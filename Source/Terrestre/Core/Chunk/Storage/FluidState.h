@@ -9,7 +9,7 @@ struct FFluidState
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Fluid state")
-	uint8 fluidID; /* ID 0 represents an index to which a fluid can move to, ID UINT8MAX represents an index, to which fluid can't move to */
+	uint8 fluidID; /* ID 0 represents an "empty" fluid, ID UINT8MAX represents an index, to which fluid can't move to */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Fluid state")
 	uint8 fillLevel; /* percentage; 0 - 0% fill, 100 - 100% fill*/
 
@@ -26,5 +26,15 @@ struct FFluidState
 	{
 		return fluidID == 1;
 	}
-
+	static FFluidState& Empty()
+	{
+		static FFluidState empty{};
+		return empty;
+	}
 };
+FORCEINLINE FArchive& operator<<(FArchive& ar, FFluidState fs)
+{
+	ar << fs.fluidID;
+	ar << fs.fillLevel;
+	return ar;
+}

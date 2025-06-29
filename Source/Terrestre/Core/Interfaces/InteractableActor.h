@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
+#include "InteractionResult.h"
 #include "InteractableActor.generated.h"
 
 
@@ -27,9 +28,11 @@ class TERRESTRE_API IInteractableActor
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Interactable Actor")
-	bool OnLeftMouseButton(ABaseCharacter* clickedBy, const FHitResult& traceResult, int32 heldItemID);
+	FInteractionResult OnLeftMouseButton(ABaseCharacter* clickedBy, const FHitResult& traceResult);
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Interactable Actor")
-	bool OnRightMouseButton(ABaseCharacter* clickedBy, const FHitResult& traceResult, int32 heldItemID);
+	FInteractionResult OnRightMouseButton(ABaseCharacter* clickedBy, const FHitResult& traceResult);
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Interactable Actor")
-	FName OnVisibleByCharacter(ABaseCharacter* visibleBy, const FHitResult& traceResult);
+	FInteractionResult OnVisibleByCharacter(ABaseCharacter* visibleBy, const FHitResult& traceResult);
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Interactable Actor")
+	FInteractionResult OnInteractedWith(ABaseCharacter* interactedBy, const FHitResult& traceResult);
 };

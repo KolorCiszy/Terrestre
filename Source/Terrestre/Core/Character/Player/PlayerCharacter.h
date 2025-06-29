@@ -6,8 +6,8 @@
 #include "Terrestre/Core/Character/BaseCharacter.h"
 #include "PlayerCharacter.generated.h"
 
-#pragma warning(disable : 4263)  /* warning from Crouch and UnCrouch function not being virtual, 
-								 /*	because if marked virtual, it didn't want to bind using enhanced input */
+#pragma warning(disable : 4263)  /* warning from Crouch and UnCrouch functions not being virtual, 
+								 /*	because if marked virtual, they didn't want to bind using enhanced input */
 #pragma warning(disable : 4264)  /* consequence of previous warning - Crouch and UnCrouch 
 								 /*	does not override any base class function */
 
@@ -32,12 +32,9 @@ public:
 
 	UPROPERTY(BlueprintAssignable)
 	FPlayerLocationChangedDelegate OnPlayerLocationChanged;
-
-	void RegisterCharacterToWorld();
-
-	void UnRegisterCharacterToWorld();
 	
-
+	UFUNCTION(BlueprintPure)
+	FHitResult& GetVisibilityResult();
 
 protected:
 	// Called when the game starts or when spawned
@@ -49,8 +46,6 @@ protected:
 
 	virtual void EndPlay(EEndPlayReason::Type reason) override;
 
-	
-
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	TObjectPtr<UInputMappingContext> DefaultInputMapping;
 
@@ -59,9 +54,7 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player Camera", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UCameraComponent> Camera;
-	/* Name of players character*/
 	
-
 	/* In unreal units */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Visibility")
 	int32 VisibilityTraceDistance;
@@ -90,6 +83,7 @@ protected:
 
 
 private:
+	FHitResult VisibilityLTResult;
 	FVector LastTickLocation;
-	
+
 };

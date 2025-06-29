@@ -3,16 +3,14 @@
 
 #include "Terrestre/Core/Chunk/ChunkManager.h"
 #include "Chunk.h"
+#include "ChunkConstants.h"
 #include "ChunkUtilityLib.h"
 #include "Kismet/GameplayStatics.h"
-#include "Terrestre/Core/Block/BlockData.h"
 #include "Terrestre/Core/Character/Player/PlayerCharacter.h"
 #include "Terrestre/Core/Gamemode/TerrestrePlayerState.h"
 #include "Terrestre/Core/Gamemode/TerrestreGameModeBase.h"
-#include "Terrestre/Core/Data Generators/TerrainShaper.h"
-#include "Terrestre/Core/Data Generators/TerrainSurfaceDecorator.h"
-
-
+#include "Terrestre/Core/Gamemode/TerrestreGameInstance.h"
+#include <Terrestre/Core/Subsystems/WorldGenSubsystem/WorldGenSubsystem.h>
 
 
 
@@ -20,7 +18,7 @@ AChunkManager::AChunkManager()
 {
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.TickInterval = 0.05f;
-	RegionLoadDistance = 1;
+	
 	SetActorTickEnabled(false);
 }
 
@@ -34,95 +32,87 @@ void AChunkManager::UnRegisterPlayerCharacter(TObjectPtr<APlayerCharacter> playe
 	player->OnPlayerLocationChanged.RemoveDynamic(this, &AChunkManager::OnPlayerLocationChanged);
 }
 
-void AChunkManager::GenerateStartingLocation()
+TFuture<FChunkData> AChunkManager::ProvideChunkData(AChunk* Chunk)
 {
-	float cont = TerrainShaper->GetContinentalnessAtXY_Native(0, 0);
-	float ero = TerrainShaper->GetErosionAtXY_Native(0, 0);
-	float pv = TerrainShaper->GetPVAtXY_Native(0, 0);
-	double terrainHeight = TerrainShaper->GetTerrainHeightAtXY_Native(0, 0, cont, ero, pv);
+	// check if can load from disk using saving subsystem, if not:
+	if (Chunk->IsValidLowLevel())
+	{
+		return GetGameInstance<UTerrestreGameInstance>()->GetSubsystem<UWorldGenSubsystem>()->ProvideChunkData(Chunk);
+	}
+	return TFuture<FChunkData>();
+}
 
-	DefaultPlayerSpawnLocation = FVector{ 0,0, (terrainHeight + 2) * 100 };
-	ATerrestrePlayerState* playerState{};
-	playerState = Cast<ATerrestrePlayerState>(UGameplayStatics::GetPlayerState(this, 0));
-	if(playerState)
+FVector AChunkManager::AdjustPlayerSpawnLocation(FVector initialLocation)
+{
+	if (auto Chunk = GetChunkAtWorldLocation(initialLocation))
 	{
-		currentChunkLocation = UChunkUtilityLib::WorldLocationToChunkLocation(playerState->GetSpawnLocation());
+		FVector SpawnLoc{};
+		uint8 AirBlocksInRow{};
+		for (int z{}; z <FChunkConstants::Size; z++)
+		{
+			FIntVector currentLocalPos{ 0,0, z };
+			auto Block = Chunk->GetBlockAtLocalPosition(currentLocalPos);
+			if (Block.IsAirBlock())
+			{
+				AirBlocksInRow++;
+			}
+			else
+			{
+				AirBlocksInRow = 0;
+			}
+			if (AirBlocksInRow == 3)
+			{
+				FIntVector SpawnLocalPos{ currentLocalPos.X, currentLocalPos.Y, currentLocalPos.Z };
+				SpawnLoc = UChunkUtilityLib::LocalPositionToWorldLocation(SpawnLocalPos, Chunk->GetActorLocation());
+				initialLocation.Z = SpawnLoc.Z;
+				return initialLocation;
+			}
+		}
+			
 	}
-	else
-	{
-		currentChunkLocation = UChunkUtilityLib::WorldLocationToChunkLocation(DefaultPlayerSpawnLocation);
-	}
+	return (initialLocation);
 }
 
 
-void AChunkManager::CreateChunkMeshingThreadPool()
-{
-	int32 threadsToCreate = FPlatformMisc::NumberOfCoresIncludingHyperthreads() / 2;
-	ChunkMeshingTP = FQueuedThreadPool::Allocate();
-	if (threadsToCreate <= 0)
-	{
-		return;
-	}
-	if (ChunkMeshingTP)
-	{
-		ChunkMeshingTP->Create(threadsToCreate, 64 * 1024, EThreadPriority::TPri_Highest, TEXT("Chunk Meshing Thread Pool"));
-	}
-}
-
-void AChunkManager::SpawnChunkActorPool()
-{
-	for (auto& location : SpawnedChunksLocations)
-	{
-		SpawnChunkAtLocation(location);
-	}
-}
 
 void AChunkManager::BeginPlay()
 {
 	Super::BeginPlay();
-
-	CreateChunkMeshingThreadPool();
-
-	BlockData::Initialize(); 
-
-	UChunkUtilityLib::ChunkManager = this;
-
-	TerrainShaper = NewObject<UTerrainShaper>();
-	TerrainShaper->Initialize();
-	UChunkUtilityLib::TerrainShaper = TerrainShaper;
-	TerrainSurfaceDecorator = NewObject<UTerrainSurfaceDecorator>();
-	UChunkUtilityLib::TerrainSurfaceDecorator = TerrainSurfaceDecorator;
-
-	GenerateStartingLocation();
-
-	RegionManager = NewObject<URegionManager>();
-	RegionManager->BeginPlay(currentChunkLocation);
+	ChunkMeshingTP = GetGameInstance<UTerrestreGameInstance>()->GetChunkMeshingTP();
 	
-	GenerateSpawnLocations(currentChunkLocation);
-	
-	while(!RegionManager->RegionsCurrentlyGenerating.IsEmpty())
-	{
-		RegionManager->Tick(currentChunkLocation);
-		FPlatformProcess::Sleep(0.1f);
-	}
+	SetupSpawnChunks();
 
-	SpawnChunkActorPool();
+	// wait until all data is gathered
+	bool bReady = false;
 
-	bShouldRecalculateActiveChunks = false;
+	
+	GetWorld()->GetTimerManager().SetTimer(
+		SpawnChunksTimerHandle,
+		FTimerDelegate::CreateLambda([this]()
+			{
+				
+				if (ActiveMeshingTasksCount == 0 && ActiveChunkDataProviderTasksCount == 0)
+				{
+					OnSpawnChunksReady.Broadcast();
 
-	OnRebuildChunkMeshes.Broadcast();
+					SetActorTickEnabled(true);
+					auto GM = Cast<ITerrestreGameModeInterface>(GetWorld()->GetAuthGameMode());
+					if (!GM)
+					{
+						UE_LOG(LogTemp, Error, TEXT("Chunk manager could not get game mode interface"));
+						return;
+					}
+					
+					GM->RequestPlayerPawnSpawn(GetWorld()->GetFirstPlayerController());
+					GetWorld()->GetTimerManager().ClearTimer(SpawnChunksTimerHandle);
+				}
+			}),
+		0.2f, // Rate in seconds
+		true,
+		0.2f// Looping
+	);
 	
-	while(ActiveMeshingTasksCount > 0)
-	{
-		FPlatformProcess::Sleep(0.5f);
-	}
 	
-	OnApplyChunkMeshes.Broadcast();
-	
-	auto gameMode = Cast<ATerrestreGameModeBase>(UGameplayStatics::GetGameMode(this));
-	gameMode->SpawnPlayerCharacter(UGameplayStatics::GetPlayerState(this, 0));
-	
-	SetActorTickEnabled(true);
 }
 
 void AChunkManager::OnPlayerLocationChanged_Implementation(FVector currentLocation)
@@ -137,99 +127,70 @@ void AChunkManager::OnPlayerLocationChanged_Implementation(FVector currentLocati
 	}
 	currentChunkLocation = chunkLocation;
 	//* If it had, generate new spawned chunks locations
-	GenerateSpawnLocations(chunkLocation);
+	bShouldRecalculateActiveChunks = true;
 }
 
-FBlockState AChunkManager::GetBlockAtWorldLocation(FVector worldLocation)
-{
-	FVector chunkLocation = UChunkUtilityLib::WorldLocationToChunkLocation(worldLocation);
-	FChunkRegion* region = RegionManager->GetChunkRegionByID(UChunkUtilityLib::GetRegionID(chunkLocation));
-	if(region)
-	{
-		FIntVector localBlockPos = UChunkUtilityLib::WorldLocationToLocalBlockPos(worldLocation);
-		return region->ChunkData[chunkLocation].BlockPalette.GetBlockAtIndex(UChunkUtilityLib::LocalBlockPosToIndex(localBlockPos));
-	}
-	return FBlockState();
-}
 
-FFluidState AChunkManager::GetFluidAtWorldLocation(FVector worldLocation)
-{
-	FVector chunkLocation = UChunkUtilityLib::WorldLocationToChunkLocation(worldLocation);
-	FChunkRegion* region = RegionManager->GetChunkRegionByID(UChunkUtilityLib::GetRegionID(chunkLocation));
-	if (region)
-	{
-		FIntVector localBlockPos = UChunkUtilityLib::WorldLocationToLocalBlockPos(worldLocation);
-		return region->ChunkData[chunkLocation].FluidStates[UChunkUtilityLib::LocalBlockPosToIndex(localBlockPos)];
-	}
-	return FFluidState();
 
-}
 
-FBlockPalette* AChunkManager::GetChunkBlockPalette(FVector chunkLocation)
-{
-	FChunkRegion* region = RegionManager->GetChunkRegionByID(UChunkUtilityLib::GetRegionID(chunkLocation));
-	if(region)
-	{
-		return &region->ChunkData[chunkLocation].BlockPalette;
-	}
-	return nullptr;	
-}
 
- bool AChunkManager::GetChunkFluidStates(FVector chunkLocation, TArray<FFluidState, TInlineAllocator<AChunk::Volume>>& fluidStates)
+void AChunkManager::SetupSpawnChunks()
 {
-	FChunkRegion* region = RegionManager->GetChunkRegionByID(UChunkUtilityLib::GetRegionID(chunkLocation));
-	if (region)
-	{
-		fluidStates = region->ChunkData[chunkLocation].FluidStates;
-		return true;
-	}
-	return false;
-}
-
-bool AChunkManager::BulkUnpackChunkBlocks(FVector chunkLocation, TArray<FBlockState, TInlineAllocator<AChunk::Volume>>& output)
-{
-	FChunkRegion*  region = RegionManager->GetChunkRegionByID(UChunkUtilityLib::GetRegionID(chunkLocation));
-	if (region)
-	{
-		region->ChunkData[chunkLocation].BlockPalette.BulkUnpack(output);
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}
-
-void AChunkManager::GenerateSpawnLocations(FVector playerCurrentChunk)
-{
-	SpawnedChunksLocations.Empty(FMath::Pow((2 * RenderDistance) + 1, 3.0));
+	auto GameMode = GetWorld()->GetAuthGameMode<ATerrestreGameModeBase>();
 	
-	for (int32 x = -RenderDistance; x <= RenderDistance; x++)
+	int32 radius = GameMode->SpawnChunkRadius;
+	
+	for (int32 x = -radius; x <= radius; x++)
 	{
-		for (int32 y = -RenderDistance; y <= RenderDistance; y++)
+		for (int32 y = -radius; y <= radius; y++)
 		{
-			for (int32 z = -RenderDistance; z <= RenderDistance; z++) 
+			for (int32 z = -radius; z <= radius; z++)
 			{
-				FVector chunkWorldLocation{ x * AChunk::SizeScaled.X + playerCurrentChunk.X,
-											y * AChunk::SizeScaled.Y + playerCurrentChunk.Y, 
-											z * AChunk::SizeScaled.Z + playerCurrentChunk.Z };
+				FVector chunkWorldLocation{ x * FChunkConstants::SizeScaled.X + GameMode->DefaultSpawnChunkStartLocation.X,
+											y * FChunkConstants::SizeScaled.Y + GameMode->DefaultSpawnChunkStartLocation.Y,
+											z * FChunkConstants::SizeScaled.Z + GameMode->DefaultSpawnChunkStartLocation.Z };
 
-				SpawnedChunksLocations.Add(chunkWorldLocation);
+				SpawnChunkAtLocation(chunkWorldLocation, false);
 			}
 		}
 	}
-	bShouldRecalculateActiveChunks = true;
+
 }
 
 void AChunkManager::RecalculateActiveChunks()
 {
-	LocationsToSpawn.Empty(FMath::Pow(RenderDistance, 3.0));
-	LocationsToDespawn.Empty(FMath::Pow(RenderDistance, 3.0));
+	auto GameMode = GetWorld()->GetAuthGameMode<ATerrestreGameModeBase>();
+	// Determine target chunks to be loaded
+	for (int32 X = -GameMode->RenderDistance; X <= GameMode->RenderDistance; ++X)
+	{
+		for (int32 Y = -GameMode->RenderDistance; Y <= GameMode->RenderDistance; ++Y)
+		{
+			for (int32 Z = -GameMode->RenderDistance; Z <= GameMode->RenderDistance; ++Z)
+			{
+				bool bBorderChunk{};
+				FVector TargetLoc = currentChunkLocation + FVector(X, Y, Z) * FChunkConstants::SizeScaled;
+				if (FMath::Abs(X) == GameMode->RenderDistance || FMath::Abs(Y) == GameMode->RenderDistance || FMath::Abs(Z) == GameMode->RenderDistance)
+				{
+					bBorderChunk = true;
+				}
+				SpawnedChunksLocations.Add(TargetLoc, bBorderChunk);
+			}
+		}
+	}
+
+	LocationsToSpawn.Empty(FMath::Pow(GameMode->RenderDistance, 3.0));
+	LocationsToDespawn.Empty(FMath::Pow(GameMode->RenderDistance, 3.0));
+
 	for (auto& location : SpawnedChunksLocations)
 	{
-		if (!SpawnedChunksMap.Contains(location))
+		if (!SpawnedChunksMap.Contains(location.Key))
 		{
-			LocationsToSpawn.Add(location);
+			LocationsToSpawn.Add(location.Key);  // TODO promote chunks to not border chunks, check locations
+		}
+		else
+		{
+			//SpawnedChunksMap[location.Key]->bBorderChunk = location.Value;
+			SpawnedChunksMap[location.Key]->ChangeBorderChunkStatus(location.Value);// Update border chunk status TODO: Make this into a function on AChunk so that it knows to update its gen state and mark mesh dirty
 		}
 	}
 	for (auto& mapEntry : SpawnedChunksMap)
@@ -243,27 +204,47 @@ void AChunkManager::RecalculateActiveChunks()
 }
 
 
-void AChunkManager::SetRenderDistance(uint8 newDistance)
-{
-	RenderDistance = FMath::Clamp(newDistance, MinRenderDistance, MaxRenderDistance);
-	GenerateSpawnLocations(currentChunkLocation);
-}
+
 
 void AChunkManager::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	OnApplyChunkMeshes.Broadcast();
-	OnRebuildChunkMeshes.Broadcast();
-	
 	if (bShouldRecalculateActiveChunks)
 	{
 		RecalculateActiveChunks();
 	}
+	TSet<FVector> ChunksLocationsLocal{};
+	uint8 SpawnCounter{};
+	for (auto& Loc : LocationsToSpawn)
+	{
+		SpawnChunkAtLocation(Loc, SpawnedChunksLocations[Loc]);
+		SpawnCounter++;
+		ChunksLocationsLocal.Add(Loc);
+		if (SpawnCounter >= GetWorld()->GetAuthGameMode<ATerrestreGameModeBase>()->ChunksToSpawnPerTick)
+		{
+			break;
+		}
+	}
+	LocationsToSpawn = LocationsToSpawn.Difference(ChunksLocationsLocal);
 
-	RegionManager->Tick(currentChunkLocation);
+	ChunksLocationsLocal.Empty();
+	SpawnCounter = 0;
 	
-
+	
+	for (auto& Loc : LocationsToDespawn)
+	{
+		DestroyChunkAtLocation(Loc);
+		ChunksLocationsLocal.Add(Loc);
+		SpawnCounter++;
+		if (SpawnCounter >= GetWorld()->GetAuthGameMode<ATerrestreGameModeBase>()->ChunksToDespawnPerTick)
+		{
+			break;
+		}
+	}
+	LocationsToDespawn = LocationsToDespawn.Difference(ChunksLocationsLocal);
+	
+		/*
 	TSet<FVector> removedChunkDespawnLocations{};
 	int32 movedChunks = 0;
 	for (auto& oldLocation : LocationsToDespawn)
@@ -271,20 +252,20 @@ void AChunkManager::Tick(float DeltaTime)
 		const FVector& newLocation = *LocationsToSpawn.CreateConstIterator();
 		FIntVector newRegionID = UChunkUtilityLib::GetRegionID(newLocation);
 		FIntVector oldRegionID = UChunkUtilityLib::GetRegionID(oldLocation);
-		FChunkRegion* newRegion = RegionManager->GetChunkRegionByID(newRegionID);
-		FChunkRegion* oldRegion = RegionManager->GetChunkRegionByID(oldRegionID);
+		//FChunkRegion* newRegion = RegionManager->GetChunkRegionByID(newRegionID);
+		//FChunkRegion* oldRegion = RegionManager->GetChunkRegionByID(oldRegionID);
 		
   		
 		TObjectPtr<AChunk> chunk;
 		chunk = SpawnedChunksMap[oldLocation];
-		if (newRegion && chunk->bMeshingTaskDone)
+		if (chunk->bMeshingTaskDone)
 		{
 			chunk->ResetMesh();
 			chunk->SetActorLocation(newLocation);
-			chunk->MarkMeshDirty();
+			//chunk->MarkMeshDirty();
 			SpawnedChunksMap.Add(newLocation, chunk);
 			SpawnedChunksMap.Remove(oldLocation);
-
+			/*
 			if (newRegionID == oldRegionID)
 			{
 				newRegion->ChunkRefCount++;
@@ -295,32 +276,35 @@ void AChunkManager::Tick(float DeltaTime)
 				check(oldRegion->ChunkRefCount >= 0)
 				oldRegion->ChunkRefCount--;
 			}
-			LocationsToSpawn.Remove(newLocation);
-			removedChunkDespawnLocations.Add(oldLocation);
-		}
+			*/
+			//LocationsToSpawn.Remove(newLocation);
+			//removedChunkDespawnLocations.Add(oldLocation);
+		//}
 		
-		movedChunks++;
-		if (movedChunks >= ChunksToMovePerTick)
-		{
-			break;
-		}
-	}
-
+		//movedChunks++;
+		//if (movedChunks >= GetWorld()->GetAuthGameMode<ATerrestreGameModeBase>()->ChunksToMovePerTick)
+		
+	//}
+	
+	/*
 	for (auto& location : removedChunkDespawnLocations)
 	{
 		LocationsToDespawn.Remove(location);
 	}
+	*/
 	
 	
 }
-TObjectPtr<AChunk> AChunkManager::SpawnChunkAtLocation(const FVector inLocation)
+AChunk* AChunkManager::SpawnChunkAtLocation(const FVector inLocation, bool bBorderChunk)
 {
 	FTransform spawnTransform{inLocation};
-	TObjectPtr<AChunk> chunk(GetWorld()->SpawnActor<AChunk>(ChunkClass, spawnTransform));
-	FChunkRegion* region = RegionManager->GetChunkRegionByID(UChunkUtilityLib::GetRegionID(inLocation));
-	SpawnedChunksMap.Add(inLocation, chunk);
-	region->ChunkRefCount++;
-	return chunk;
+	AChunk* Chunk(GetWorld()->SpawnActorDeferred<AChunk>(ChunkClass, spawnTransform, this, nullptr, ESpawnActorCollisionHandlingMethod::AlwaysSpawn));
+	
+	Chunk->bBorderChunk = bBorderChunk;
+	SpawnedChunksMap.Add(inLocation, Chunk);
+	UGameplayStatics::FinishSpawningActor(Chunk, spawnTransform);
+	
+	return Chunk;
 }
 void AChunkManager::DestroyChunkAtLocation(const FVector inLocation)
 {
@@ -329,10 +313,13 @@ void AChunkManager::DestroyChunkAtLocation(const FVector inLocation)
 		if(chunk->Get()->bReadyToDestroy)
 		{
 			chunk->Get()->Destroy();
-			LocationsToDespawn.Remove(inLocation);
+			
 			SpawnedChunksMap.Remove(inLocation);
-			FChunkRegion* region = RegionManager->GetChunkRegionByID(UChunkUtilityLib::GetRegionID(inLocation));
-			region->ChunkRefCount--;
+		}
+		else
+		{
+			chunk->Get()->MarkPendingDestroy();
+			UE_LOG(LogTemp, Warning, TEXT("Chunk at %s marked for destroy but wasn't ready for it"), *inLocation.ToString());
 		}
 	}
 }
@@ -364,9 +351,17 @@ void AChunkManager::SetTickEnabled(bool bEnabled)
 }
 void AChunkManager::EndPlay(EEndPlayReason::Type reason)
 {
-	ChunkMeshingTP->Destroy();
-	delete ChunkMeshingTP;
-	RegionManager->EndPlay();
-	UChunkUtilityLib::ChunkManager = nullptr;
+	Super::EndPlay(reason);
+	UE_LOG(LogTemp, Warning, TEXT("Chunk manager EndPlay"));
+
+	for(auto& chunk : SpawnedChunksMap)
+	{
+		if (chunk.Value->IsValidLowLevel())
+		{
+			DestroyChunkAtLocation(chunk.Key);
+		}
+	}
+
+
 }
 

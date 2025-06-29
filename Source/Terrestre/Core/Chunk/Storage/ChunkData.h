@@ -3,7 +3,8 @@
 #include "CoreMinimal.h"
 #include "BlockPalette.h"
 #include "FluidState.h"
-#include "Terrestre/Core/Chunk/Chunk.h"
+#include "Terrestre/Core/Chunk/ChunkConstants.h"
+#include "Terrestre/Core/Chunk/ChunkGenStage.h"
 
 class FChunkData;
 
@@ -12,33 +13,42 @@ class FProtoChunkData
 {
 public:
 
+	TArray<FBlockState, TInlineAllocator<FChunkConstants::Volume>> BlockStates;
+	TArray<FFluidState, TInlineAllocator<FChunkConstants::Volume>> FluidStates;
+	EChunkGenStage GenStage;
+
+
 
 	FProtoChunkData(const FProtoChunkData&) = delete;
 	FProtoChunkData& operator=(const FProtoChunkData&) = delete;
 
 	FProtoChunkData()
 	{
-		BlockStates.Init(FBlockState(), AChunk::Volume);
-		FluidStates.Init(FFluidState(), AChunk::Volume);
+		BlockStates.Init(FBlockState(), FChunkConstants::Volume);
+		FluidStates.Init(FFluidState(), FChunkConstants::Volume);
+		GenStage = EChunkGenStage::Empty;
 	}
-	FProtoChunkData(TArray<FBlockState, TInlineAllocator<AChunk::Volume>>&& blocks,
-		TArray<FFluidState, TInlineAllocator<AChunk::Volume>>&& fluids)
+	FProtoChunkData(TArray<FBlockState, TInlineAllocator<FChunkConstants::Volume>>&& blocks,
+					TArray<FFluidState, TInlineAllocator<FChunkConstants::Volume>>&& fluids,
+					EChunkGenStage genStage)
 	{
 		BlockStates = blocks;
 		FluidStates = fluids;
+		GenStage = genStage;
 	};
-	TArray<FBlockState, TInlineAllocator<AChunk::Volume>> BlockStates;
-	TArray<FFluidState, TInlineAllocator<AChunk::Volume>> FluidStates;
+	
 
 	FProtoChunkData(FProtoChunkData&& move)
 	{
 		BlockStates = MoveTemp(move.BlockStates);
 		FluidStates = MoveTemp(move.FluidStates);
+		GenStage = move.GenStage;
 	}
 	FProtoChunkData& operator=(FProtoChunkData&& move)
 	{
 		BlockStates = MoveTemp(move.BlockStates);
 		FluidStates = MoveTemp(move.FluidStates);
+		GenStage = move.GenStage;
 		return *this;
 	}
 
@@ -53,18 +63,23 @@ class FChunkData
 public:
 
 	FBlockPalette BlockPalette;
-	TArray<FFluidState, TInlineAllocator<AChunk::Volume>> FluidStates;
+	TArray<FFluidState, TInlineAllocator<FChunkConstants::Volume>> FluidStates;
+	EChunkGenStage GenStage;
 
-	FChunkData(TArray<FBlockState, TInlineAllocator<AChunk::Volume>>& blocks, 
-				TArray<FFluidState, TInlineAllocator<AChunk::Volume>>&& fluids) 
+	FChunkData() {};
+	FChunkData(TArray<FBlockState, TInlineAllocator<FChunkConstants::Volume>>& blocks,
+				TArray<FFluidState, TInlineAllocator<FChunkConstants::Volume>>&& fluids,
+				EChunkGenStage genStage) 
 	{
 		BlockPalette = blocks;
 		FluidStates = fluids;
+		GenStage = genStage;
 	};
 	FChunkData(FProtoChunkData& protoChunkData)
 	{
 		BlockPalette = protoChunkData.BlockStates;
 		FluidStates = MoveTemp(protoChunkData.FluidStates);
+		GenStage = protoChunkData.GenStage;
 	}
 
 
@@ -72,6 +87,7 @@ public:
 	{
 		BlockPalette = MoveTemp(move.BlockPalette);
 		FluidStates = MoveTemp(move.FluidStates);
+		GenStage = move.GenStage;
 	}
 	FChunkData(const FChunkData&) = default;
 	FChunkData& operator=(const FChunkData&) = default;
@@ -81,6 +97,15 @@ public:
 	{
 		BlockPalette = MoveTemp(move.BlockPalette);
 		FluidStates = MoveTemp(move.FluidStates);
+		GenStage = move.GenStage;
 		return *this;
 	}
+	
 };
+FORCEINLINE FArchive& operator<<(FArchive& ar, FChunkData& cd)
+{
+	ar << cd.BlockPalette;
+	ar << cd.FluidStates;
+	ar << cd.GenStage;
+	return ar;
+}

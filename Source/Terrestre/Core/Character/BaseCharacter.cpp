@@ -6,6 +6,7 @@
 #include "Terrestre/Core/Chunk/ChunkManager.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PhysicsVolume.h"
+#include "Kismet/GameplayStatics.h"
 #include "Components/CapsuleComponent.h"
 
 
@@ -22,13 +23,23 @@ FBlockState ABaseCharacter::GetBlockStateCharStandingOn()
 {
 	FVector feetLocation = GetActorLocation();
 	feetLocation.Z  -= (GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + 15.0);
-	return UChunkUtilityLib::GetChunkManager()->GetBlockAtWorldLocation(feetLocation);
+	AActor* ChunkManager = UGameplayStatics::GetActorOfClass(GetWorld(), AChunkManager::StaticClass());
+	if (ChunkManager->Implements<UChunkAccess>())
+	{
+		return Cast<IChunkAccess>(ChunkManager)->GetBlockAtWorldPosition(feetLocation);
+	}
+	return FBlockState::AirBlock();
 }
 FFluidState ABaseCharacter::GetHeadFluidState()
 {
 	FVector headLocation = GetActorLocation();
 	headLocation.Z += GetCapsuleComponent()->GetScaledCapsuleHalfHeight() * 0.7;
-	return UChunkUtilityLib::GetChunkManager()->GetFluidAtWorldLocation(headLocation);
+	AActor* ChunkManager = UGameplayStatics::GetActorOfClass(GetWorld(), AChunkManager::StaticClass());
+	if (ChunkManager->Implements<UChunkAccess>()) 
+	{
+		return Cast<IChunkAccess>(ChunkManager)->GetFluidAtWorldPosition(headLocation);
+	}
+	return FFluidState();
 }
 void ABaseCharacter::OnStartSwimming_Implementation()
 {

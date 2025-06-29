@@ -2,7 +2,6 @@
 
 #include "CoreMinimal.h"
 #include "BlockPalette.h"
-#include "Terrestre/Core/Chunk/Async/RegionGenerationStages.h"
 #include "Terrestre/Core/Chunk/Chunk.h"
 #include "ChunkData.h"
 
@@ -27,10 +26,8 @@ struct FChunkRegion
 	FChunkRegion() 
 	{ 
 		ChunkRefCount = 0;
-		CurrentGenStage = ERegionGenerationStages::None;
 		bIsBorderRegion = true;
 		bIsLoaded = false;
-
 	};
 	FChunkRegion(const FChunkRegion& copy) = default;
 	
@@ -40,13 +37,13 @@ struct FChunkRegion
 	{
 		ChunkRefCount = move.ChunkRefCount;
 		ChunkData = MoveTemp(ChunkData);
-		CurrentGenStage = move.CurrentGenStage;
+		
 	}
 	FChunkRegion& operator=(FChunkRegion&& move)
 	{
 		ChunkRefCount = move.ChunkRefCount;
 		ChunkData = MoveTemp(move.ChunkData);
-		CurrentGenStage = move.CurrentGenStage;
+	
 		return *this;
 	}
 	FChunkRegion(FChunkProtoRegion& protoRegion)
@@ -73,8 +70,8 @@ struct FChunkRegion
 	/* How many chunks are referencing data from this region*/
 	int32 ChunkRefCount;
 	
+	FIntVector ID;
 
-	ERegionGenerationStages CurrentGenStage;
 
 	bool bIsBorderRegion;
 
@@ -84,20 +81,12 @@ struct FChunkRegion
 
 /*** STATIC MEMBERS ***/
 
-	/* Amount of chunks in one region on every axis */
-	static constexpr uint8 RegionSize = 8u;
-	/* Amount of chunks in one region on every axis squared */
-	static constexpr uint16 RegionSizeSquared = RegionSize * RegionSize;
-	/* Amount of block in one region on one axis (length of an edge of region) */
-	static constexpr uint16 RegionSizeInBlocks = RegionSize * AChunk::Size;
-	/* Amount of block in one region on one axis (length of an edge of region) squared */
-	static constexpr uint32 RegionSizeInBlocksSquared = RegionSizeInBlocks * RegionSizeInBlocks;
-
-	static constexpr uint32 RegionVolumeInBlocks = RegionSizeInBlocks * RegionSizeInBlocksSquared;
-	/* Amount of chunks in one region (volume of region in chunks) */
-	static constexpr uint16 RegionVolume = RegionSize * RegionSize * RegionSize;
-	/* The size of chunk region on every axis, scaled to unreal units */
-	static inline FIntVector RegionSizeScaled{ RegionSize * AChunk::SizeScaled };
 	
-
+	
+	
 };
+FORCEINLINE FArchive& operator<<(FArchive& ar, FChunkRegion& region)
+{
+	ar << region.ChunkData;
+	return ar;
+}

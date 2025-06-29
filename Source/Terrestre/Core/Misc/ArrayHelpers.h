@@ -24,5 +24,9 @@ namespace ArrayHelpers
 		result.X = index % arraySize;
 		return result;
 	}
-
+	static constexpr FORCEINLINE size_t Pos3DToIndex(FIntVector pos, size_t arraySize)
+	{
+		return pos.X + pos.Y * arraySize + pos.Z * arraySize * arraySize;
+	}
+	
 }

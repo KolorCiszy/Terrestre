@@ -13,6 +13,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "PlayerInputConfigData.h"
+#include <Terrestre/Core/Gamemode/TerrestreGameModeBase.h>
+#include <Terrestre/Core/Gamemode/TerrestreGameState.h>
 
 
 
@@ -42,26 +44,18 @@ void APlayerCharacter::OnConstruction(const FTransform& Transform)
     }
 }
 
-void APlayerCharacter::RegisterCharacterToWorld()
-{
-    if (auto manager = UChunkUtilityLib::GetChunkManager())
-    {
-        manager->RegisterPlayerCharacter(this);
-    }
-}
-void APlayerCharacter::UnRegisterCharacterToWorld()
-{
-    if(auto manager = UChunkUtilityLib::GetChunkManager())
-    {
-        manager->UnRegisterPlayerCharacter(this);
-    }
-}
+
 
 // Called when the game starts or when spawned
 void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-    RegisterCharacterToWorld();
+    auto GameMode = GetWorld()->GetGameState<ATerrestreGameState>();
+    auto ChunkManager = GameMode->GetChunkManager();
+    if (ChunkManager)
+    {
+        ChunkManager->RegisterPlayerCharacter(this);
+    }
 }
 
 void APlayerCharacter::PossessedBy(AController* NewController)
@@ -74,8 +68,12 @@ void APlayerCharacter::PossessedBy(AController* NewController)
 		Subsystem->AddMappingContext(DefaultInputMapping, 0);
 	}
 }
-// Called every frame
 
+FHitResult& APlayerCharacter::GetVisibilityResult()
+{
+    return VisibilityLTResult;
+}
+// Called every frame
 void APlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -84,8 +82,10 @@ void APlayerCharacter::Tick(float DeltaTime)
         OnPlayerLocationChanged.Broadcast(GetActorLocation());
     }
     LastTickLocation = GetActorLocation();
-    
+    bool bHitSuccesful{};
+    VisibilityLineTrace(bHitSuccesful, VisibilityLTResult);
 }
+
 void APlayerCharacter::VisibilityLineTrace(bool& bHitSuccesful, FHitResult& hitResult)
 {
     FHitResult result{};
@@ -246,6 +246,5 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 void APlayerCharacter::EndPlay(EEndPlayReason::Type reason)
 {
     Super::EndPlay(reason);
-    UnRegisterCharacterToWorld();
 }
 

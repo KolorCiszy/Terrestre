@@ -9,7 +9,7 @@ public class Terrestre : ModuleRules
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
         
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore" , "EnhancedInput" , "RealtimeMeshComponent", "ProceduralMeshComponent", "DataRegistry", "FastNoise", "FastNoiseGenerator", "GameplayTags"});
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore" , "EnhancedInput" , "DataRegistry", "FastNoise", "FastNoiseGenerator", "GameplayTags", "DynamicMesh", "GeometryFramework", "GeometryCore"});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 

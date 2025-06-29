@@ -1,58 +1,36 @@
 #include "RegionManager.h"
 #include "Terrestre/Core/Chunk/ChunkUtilityLib.h"
 #include "Terrestre/Core/Chunk/ChunkManager.h"
-#include "Terrestre/Core/Chunk/Async/GenerateRegionTerrainShapeTask.h"
-#include "Terrestre/Core/Chunk/Async/GenerateRegionSurfaceLayerTask.h"
 
-URegionManager::URegionManager()
+#include <Terrestre/Core/Subsystems/WorldGenSubsystem/WorldGenSubsystem.h>
+#include <Terrestre/Core/Gamemode/TerrestreGameInstance.h>
+
+ARegionManager::ARegionManager()
 {
 	
 }
 
-URegionManager* URegionManager::Get()
-{
-	return UChunkUtilityLib::GetChunkManager()->RegionManager;
-}
-void URegionManager::CreateChunkRegionGenerationThreadPool()
-{
-	int32 threadsToCreate = FPlatformMisc::NumberOfCoresIncludingHyperthreads() - 4;
-	if (threadsToCreate <= 0)
-	{
-		return;
-	}
-	ChunkRegionGenerationTP = FQueuedThreadPool::Allocate();
-	if (ChunkRegionGenerationTP)
-	{
-		ChunkRegionGenerationTP->Create(threadsToCreate, 32 * 1024, EThreadPriority::TPri_Normal, TEXT("Chunk Region Data Generation Thread Pool"));
-	}
-}
 
 
-FChunkRegion* URegionManager::GetChunkRegionByID(FIntVector regionID)
+/*
+
+FChunkRegion* ARegionManager::GetChunkRegionByID(FIntVector regionID)
 {
 	FRWScopeLock lock(RWLock, FRWScopeLockType::SLT_ReadOnly);
 	if (FChunkRegion* region = RegionsMap.Find(regionID))
 	{
+		/*
 		if (region->bIsLoaded && region->CurrentGenStage != ERegionGenerationStages::TerrainShape)
 		{
 			return region;
 		}
+		
+
 	}
 	return nullptr;
 }
-FChunkRegion* URegionManager::GetChunkRegionByID_WG(FIntVector regionID)
-{
-	FRWScopeLock lock(RWLock, FRWScopeLockType::SLT_ReadOnly);
-	if (auto region = RegionsMap.Find(regionID))
-	{
-		if (region->bIsLoaded)
-		{
-			return region;
-		}
-	}
-	return nullptr;
-}
-const FBlockState URegionManager::GetBlockStateAtWorldBlockLoc_ReadOnly(FIntVector worldBlockLoc)
+
+const FBlockState ARegionManager::GetBlockStateAtWorldBlockLoc_ReadOnly(FIntVector worldBlockLoc)
 {
 	FVector ChunkLoc = UChunkUtilityLib::BlockPosToChunkWorldLocation(worldBlockLoc);
 	FIntVector RegionID = UChunkUtilityLib::GetRegionID(ChunkLoc);
@@ -68,37 +46,18 @@ const FBlockState URegionManager::GetBlockStateAtWorldBlockLoc_ReadOnly(FIntVect
 		}
 	return FBlockState{};
 }
-bool URegionManager::CreateRegionWithID(FIntVector regionID, bool bBorderRegion)
-{
-	if (RWLock.TryReadLock())
-	{
-		FChunkRegion* region = RegionsMap.Find(regionID);
-		RWLock.ReadUnlock();
-		if (region)
-		{
-			return false;
-		}
-		RWLock.WriteLock();
-		
-		FChunkRegion* createdRegion = &RegionsMap.Add({ regionID, FChunkRegion() });
-		createdRegion->bIsBorderRegion = bBorderRegion;
-		createdRegion->bIsLoaded = false;
 
-		RWLock.WriteUnlock();
-		return true;
-	}
-	return false;
-}
 
-bool URegionManager::RemoveRegionWithID(FIntVector regionID)
+bool ARegionManager::RemoveRegionWithID(FIntVector regionID)
 {
 	FRWScopeLock lock(RWLock, FRWScopeLockType::SLT_Write);
 	RegionsMap.Remove(regionID);
 	return true;
 }
 
-void URegionManager::AsyncGenerateRegionData(FIntVector regionID)
+void ARegionManager::AsyncGenerateRegionData(FIntVector regionID)
 {
+	
 	
 	RWLock.ReadLock();
 	EQueuedWorkPriority priority = RegionsMap[regionID].bIsBorderRegion ? EQueuedWorkPriority::Low : EQueuedWorkPriority::Highest;
@@ -118,11 +77,11 @@ void URegionManager::AsyncGenerateRegionData(FIntVector regionID)
 }
 
 
-void URegionManager::RegionDataGenComplete(FIntVector regionID)
+void ARegionManager::RegionDataGenComplete(FIntVector regionID)
 {
 	RegionsToGetDataFrom.Enqueue(regionID);
 }
-void URegionManager::RegionDataGenFailed(FIntVector regionID)
+void ARegionManager::RegionDataGenFailed(FIntVector regionID)
 {
 	AsyncTask(ENamedThreads::GameThread,
 		[regionID, this]()
@@ -135,7 +94,7 @@ void URegionManager::RegionDataGenFailed(FIntVector regionID)
 			}
 		});
 }
-void URegionManager::GetRegionDataAndDeleteTask(FIntVector regionID)
+void ARegionManager::GetRegionDataAndDeleteTask(FIntVector regionID)
 {
 	auto AsyncTask = RegionGenerationTasks[regionID];
 	if (AsyncTask)
@@ -168,7 +127,7 @@ void URegionManager::GetRegionDataAndDeleteTask(FIntVector regionID)
 		
 	}
 }
-void URegionManager::UpdateActiveRegionsIDs(FVector centerChunk)
+void ARegionManager::UpdateActiveRegionsIDs(FVector centerChunk)
 {
 	ActiveRegionsIDs.Reset();
 	FIntVector currentRegionID = UChunkUtilityLib::GetRegionID(centerChunk);
@@ -192,7 +151,7 @@ void URegionManager::UpdateActiveRegionsIDs(FVector centerChunk)
 		}
 	}
 }
-void URegionManager::UpdateRegionsToLoad()
+void ARegionManager::UpdateRegionsToLoad()
 {
 	FRWScopeLock RWSLock(RWLock, FRWScopeLockType::SLT_ReadOnly);
 	for (auto& region : RegionsMap)
@@ -219,7 +178,7 @@ void URegionManager::UpdateRegionsToLoad()
 		}
 	}
 }
-void URegionManager::LoadPendingRegions()
+void ARegionManager::LoadPendingRegions()
 {
 	for (auto& region : RegionsToLoad)
 	{
@@ -231,7 +190,7 @@ void URegionManager::LoadPendingRegions()
 		
 	}
 }
-void URegionManager::UpdateRegionsToUnload()
+void ARegionManager::UpdateRegionsToUnload()
 {
 	FRWScopeLock RWSLock(RWLock, FRWScopeLockType::SLT_ReadOnly);
 	for (auto& region : RegionsMap)
@@ -242,7 +201,7 @@ void URegionManager::UpdateRegionsToUnload()
 		}
 	}
 }
-void URegionManager::BeginPlay(FVector centerChunk)
+void ARegionManager::BeginPlay(FVector centerChunk)
 {
 	CreateChunkRegionGenerationThreadPool();
 
@@ -258,51 +217,46 @@ void URegionManager::BeginPlay(FVector centerChunk)
 	LoadPendingRegions();
 }
 
-void URegionManager::Tick(FVector centerChunk)
+void ARegionManager::Tick(FVector centerChunk)
 {
-	FIntVector currentRegionID = UChunkUtilityLib::GetRegionID(centerChunk);
-	if (FIntVector* regionID = RegionsToGetDataFrom.Peek())
+	for (auto& PendingRegion : PendingRegions)
 	{
-		GetRegionDataAndDeleteTask(*regionID);
-		UpdateRegionsToLoad();
-		LoadPendingRegions();
+		if (PendingRegion.Value.IsReady())
+		{
+			RegionsMap.Add(PendingRegion.Key, PendingRegion.Value.Get());
+		}
 	}
-	
-	else if (currentCenterRegionID != currentRegionID)
+
+
+	if (currentCenterRegionID != currentRegionID)
 	{
-		
 		UpdateActiveRegionsIDs(centerChunk);
 
-
+		RWLock.WriteLock();
 		for (auto& region : ActiveRegionsIDs)
 		{
-
 			if (!RegionsMap.Contains(region.Key))
 			{
 				CreateRegionWithID(region.Key, region.Value);
 			}
 			RegionsMap[region.Key].bIsBorderRegion = region.Value;
 		}
+		RWLock.WriteUnlock();
+
 		UpdateRegionsToLoad();
 		LoadPendingRegions();
 
 		currentCenterRegionID = currentRegionID;
-			
 	}
-	
-	/*
-	for (auto& task : RegionGenerationTasks)
+	else if (FIntVector* regionID = RegionsToGetDataFrom.Peek())
 	{
-		if(task.Value->IsIdle())
-		{
-			task.Value->Reschedule(ChunkRegionGenerationTP);
-		}
+		GetRegionDataAndDeleteTask(*regionID);
+		UpdateRegionsToLoad();
+		LoadPendingRegions();
 	}
-	*/
-	
-	
+
 }
-void URegionManager::EndPlay()
+void ARegionManager::EndPlay()
 {
 	while(!RegionGenerationTasks.IsEmpty())
 	{
@@ -317,3 +271,4 @@ void URegionManager::EndPlay()
 	ChunkRegionGenerationTP->Destroy();
 	delete ChunkRegionGenerationTP;
 }
+*/

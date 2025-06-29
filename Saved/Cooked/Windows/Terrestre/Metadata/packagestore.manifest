@@ -1461,6 +1461,10 @@
 			"ChunkId": "7daf8c7b8f1174b000000001"
 		},
 		{
+			"Path": "Terrestre/Content/Core/Player/Input/PlayerNumPress_IA.uasset",
+			"ChunkId": "af0c6f01e99c026500000001"
+		},
+		{
 			"Path": "Terrestre/Content/Core/Player/Input/PlayerRMB_IA.uasset",
 			"ChunkId": "4985589be0a5bb6000000001"
 		},
@@ -1477,8 +1481,48 @@
 			"ChunkId": "028bcfc4aba6c5db00000001"
 		},
 		{
+			"Path": "Terrestre/Content/Core/UI/Fonts/Oxanium-VariableFont_wght.uasset",
+			"ChunkId": "375ce97655eacad500000001"
+		},
+		{
+			"Path": "Terrestre/Content/Core/UI/Fonts/Oxanium.uasset",
+			"ChunkId": "0ce257b66142b43e00000001"
+		},
+		{
+			"Path": "Terrestre/Content/Core/UI/Icons/HealthBar.uasset",
+			"ChunkId": "31e50ab7c244d39e00000001"
+		},
+		{
+			"Path": "Terrestre/Content/Core/UI/Icons/HungerBar.uasset",
+			"ChunkId": "1fd25541bc87e23c00000001"
+		},
+		{
+			"Path": "Terrestre/Content/Core/UI/Icons/ItemSlot.uasset",
+			"ChunkId": "dffbd8a8824c0bfd00000001"
+		},
+		{
+			"Path": "Terrestre/Content/Core/UI/Icons/ThirstBar.uasset",
+			"ChunkId": "6fc30ad98df88b9900000001"
+		},
+		{
+			"Path": "Terrestre/Content/Core/UI/Inventory/EquipmentInfoSlot_WBP.uasset",
+			"ChunkId": "b9b4ce1fa0f50f6700000001"
+		},
+		{
+			"Path": "Terrestre/Content/Core/UI/Inventory/HealthBar_WBP.uasset",
+			"ChunkId": "1231ab5007cd342f00000001"
+		},
+		{
+			"Path": "Terrestre/Content/Core/UI/Inventory/HungerBar_WBP.uasset",
+			"ChunkId": "8dc8659a383839bd00000001"
+		},
+		{
 			"Path": "Terrestre/Content/Core/UI/Inventory/InventorySlot_WBP.uasset",
 			"ChunkId": "3015b3d294e34dff00000001"
+		},
+		{
+			"Path": "Terrestre/Content/Core/UI/Inventory/ThirstBar_WBP.uasset",
+			"ChunkId": "85e24c4733c6aded00000001"
 		},
 		{
 			"Path": "Terrestre/Content/Core/World/Chunk/AChunk_BP.uasset",
@@ -1515,10 +1559,6 @@
 		{
 			"Path": "Terrestre/Content/Core/World/Materials/Water/Water_MI.uasset",
 			"ChunkId": "aa1df3c6540ae16e00000001"
-		},
-		{
-			"Path": "Terrestre/Content/Core/World/Textures/Terrain/basalt_smooth.uasset",
-			"ChunkId": "05f160534132eb3f00000001"
 		},
 		{
 			"Path": "Terrestre/Content/Core/World/Textures/Terrain/basalt_smoothV2.uasset",
@@ -3300,6 +3340,12 @@
 			]
 		},
 		{
+			"Name": "/Game/Core/Player/Input/PlayerNumPress_IA",
+			"ExportBundleChunkIds": [
+				"af0c6f01e99c026500000001"
+			]
+		},
+		{
 			"Name": "/Game/Core/Player/Input/PlayerRMB_IA",
 			"ExportBundleChunkIds": [
 				"4985589be0a5bb6000000001"
@@ -3324,9 +3370,69 @@
 			]
 		},
 		{
+			"Name": "/Game/Core/UI/Fonts/Oxanium",
+			"ExportBundleChunkIds": [
+				"0ce257b66142b43e00000001"
+			]
+		},
+		{
+			"Name": "/Game/Core/UI/Fonts/Oxanium-VariableFont_wght",
+			"ExportBundleChunkIds": [
+				"375ce97655eacad500000001"
+			]
+		},
+		{
+			"Name": "/Game/Core/UI/Icons/HealthBar",
+			"ExportBundleChunkIds": [
+				"31e50ab7c244d39e00000001"
+			]
+		},
+		{
+			"Name": "/Game/Core/UI/Icons/HungerBar",
+			"ExportBundleChunkIds": [
+				"1fd25541bc87e23c00000001"
+			]
+		},
+		{
+			"Name": "/Game/Core/UI/Icons/ItemSlot",
+			"ExportBundleChunkIds": [
+				"dffbd8a8824c0bfd00000001"
+			]
+		},
+		{
+			"Name": "/Game/Core/UI/Icons/ThirstBar",
+			"ExportBundleChunkIds": [
+				"6fc30ad98df88b9900000001"
+			]
+		},
+		{
+			"Name": "/Game/Core/UI/Inventory/EquipmentInfoSlot_WBP",
+			"ExportBundleChunkIds": [
+				"b9b4ce1fa0f50f6700000001"
+			]
+		},
+		{
+			"Name": "/Game/Core/UI/Inventory/HealthBar_WBP",
+			"ExportBundleChunkIds": [
+				"1231ab5007cd342f00000001"
+			]
+		},
+		{
+			"Name": "/Game/Core/UI/Inventory/HungerBar_WBP",
+			"ExportBundleChunkIds": [
+				"8dc8659a383839bd00000001"
+			]
+		},
+		{
 			"Name": "/Game/Core/UI/Inventory/InventorySlot_WBP",
 			"ExportBundleChunkIds": [
 				"3015b3d294e34dff00000001"
+			]
+		},
+		{
+			"Name": "/Game/Core/UI/Inventory/ThirstBar_WBP",
+			"ExportBundleChunkIds": [
+				"85e24c4733c6aded00000001"
 			]
 		},
 		{
@@ -3390,12 +3496,6 @@
 			"Name": "/Game/Core/World/Materials/Water/Water_MI",
 			"ExportBundleChunkIds": [
 				"aa1df3c6540ae16e00000001"
-			]
-		},
-		{
-			"Name": "/Game/Core/World/Textures/Terrain/basalt_smooth",
-			"ExportBundleChunkIds": [
-				"05f160534132eb3f00000001"
 			]
 		},
 		{

@@ -3,8 +3,10 @@
 #include "Containers/BitArray.h"
 #include "Containers/Set.h"
 #include "Containers/SortedMap.h"
+#include "Terrestre/Core/Chunk/ChunkUtilityLib.h"
+#include "Terrestre/Core/Chunk/ChunkConstants.h"
 
-FBlockPalette::FBlockPalette(TArray<FBlockState, TInlineAllocator<AChunk::Volume>>& rawData)
+FBlockPalette::FBlockPalette(TArray<FBlockState, TInlineAllocator<FChunkConstants::Volume>>& rawData)
 {
     TSet<FBlockState> entries;
     for (auto& block : rawData)
@@ -15,12 +17,13 @@ FBlockPalette::FBlockPalette(TArray<FBlockState, TInlineAllocator<AChunk::Volume
     int16 index{};
     paletteEntries.Reset();
     bHomogenous = false;
+    bEmpty = false;
     for (const auto& blockState : entries)
     {
         paletteEntries.Add(index++, FPaletteEntry(blockState, 0));
     }
     bitsPerBlock = CalculateBitsPerBlock();
-    data.PadToNum(AChunk::Volume * uint32(bitsPerBlock),0);
+    data.PadToNum(FChunkConstants::Volume * uint32(bitsPerBlock),0);
     int32 dataIndex{};
     for (const auto& BlockState : rawData)
     {
@@ -36,9 +39,13 @@ FBlockPalette::FBlockPalette(TArray<FBlockState, TInlineAllocator<AChunk::Volume
         }
         dataIndex += bitsPerBlock;
     }
-    if (paletteEntries.Num() == 1 && paletteEntries[0].refCount == AChunk::Volume)
+    if (paletteEntries.Num() == 1 && paletteEntries[0].refCount == FChunkConstants::Volume)
     {
         bHomogenous = true;
+		if (paletteEntries[0].block.IsAirBlock())
+		{
+            bEmpty = true;
+		}
     }
 }
 
@@ -55,8 +62,11 @@ FBlockState FBlockPalette::GetBlockAtIndex(const int16 index) const
     }
     return paletteEntries.Contains(paletteIndex) ? paletteEntries[paletteIndex].block : FBlockState{};
 }
-
-
+FBlockState FBlockPalette::GetBlockAtLocalPos(FIntVector localPos) const
+{
+    FIntVector PosAfterModulo = UChunkUtilityLib::VecModulo(localPos, FChunkConstants::Size);
+    return GetBlockAtIndex(UChunkUtilityLib::LocalBlockPosToIndex(PosAfterModulo));
+}
 
 int16 FBlockPalette::FindBlockPaletteIndex(const FBlockState& block) const
 {
@@ -65,8 +75,7 @@ int16 FBlockPalette::FindBlockPaletteIndex(const FBlockState& block) const
     if (entry)
         return entry->Key;
     else
-        return -1;
-       
+        return -1;      
 }
 void FBlockPalette::ModifyBlockAtIndex(int16 index, const FBlockState& newBlock)
 {
@@ -78,7 +87,6 @@ void FBlockPalette::ModifyBlockAtIndex(int16 index, const FBlockState& newBlock)
     {
         // * New block is the same as the current one, so we do nothing
         return;
-        
     }
     else
     {
@@ -126,7 +134,7 @@ void FBlockPalette::ModifyBlockAtIndex(int16 index, const FBlockState& newBlock)
             {
                 // * If the next index will be impossible to encode with current bits per block
 
-                TArray<FBlockState, TInlineAllocator<AChunk::Volume>> rawData{};
+                TArray<FBlockState, TInlineAllocator<FChunkConstants::Volume>> rawData{};
                 BulkUnpack(rawData);
                 // * The data is now in its raw form - just an array of block states, so we simply swap the index with the new block
                 rawData[index] = newBlock;
@@ -137,13 +145,11 @@ void FBlockPalette::ModifyBlockAtIndex(int16 index, const FBlockState& newBlock)
 
             }
         }
-        
         // * If the ref count of the old block is 0, we can remove it from the palette
-       
         // * Last check - lowers bits per block, if possible
         if (bitsPerBlock != CalculateBitsPerBlock())
         {
-            TArray<FBlockState, TInlineAllocator<AChunk::Volume>> rawData{};
+            TArray<FBlockState, TInlineAllocator<FChunkConstants::Volume>> rawData{};
             BulkUnpack(rawData);
             FBlockPalette newPalette(rawData);
             *this = MoveTemp(newPalette);
@@ -155,17 +161,17 @@ void FBlockPalette::SetFill(FBlockState blockFill)
 
     paletteEntries.Empty();
     paletteEntries.Shrink();
-    paletteEntries.Add(0, FPaletteEntry(blockFill, AChunk::Volume));
+    paletteEntries.Add(0, FPaletteEntry(blockFill, FChunkConstants::Volume));
     bHomogenous = true;
 }
-void FBlockPalette::BulkUnpack(TArray<FBlockState, TInlineAllocator<AChunk::Volume>>& outputDestination) const
+void FBlockPalette::BulkUnpack(TArray<FBlockState, TInlineAllocator<FChunkConstants::Volume>>& outputDestination) const
 {
     if(bHomogenous)
     {
-        outputDestination.Init(paletteEntries[0].block, AChunk::Volume);
+        outputDestination.Init(paletteEntries[0].block, FChunkConstants::Volume);
         return;
     }
-    outputDestination.SetNumUninitialized(AChunk::Volume);
+    outputDestination.SetNumUninitialized(FChunkConstants::Volume);
     int32 dataIndex{};
     int32 dataItr{};
     for(int32 outputItr{0}; outputItr < outputDestination.Num(); outputItr++)
@@ -191,3 +197,5 @@ uint8 FBlockPalette::CalculateBitsPerBlock() const
     uint32 debug = FMath::CeilLogTwo(paletteEntries.Num());
     return debug;
 }
+
+
